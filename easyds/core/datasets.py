@@ -95,16 +95,86 @@ def list_datasets(
     return result or []
 
 
+def update_metadata(
+    backend: EasyDatasetBackend,
+    project_id: str,
+    dataset_id: str,
+    *,
+    score: float | None = None,
+    tags: list[str] | None = None,
+    note: str | None = None,
+) -> dict[str, Any]:
+    """PATCH /api/projects/{id}/datasets/{datasetId} — review metadata only.
+
+    Server route is PATCH-only and **only** accepts ``score`` (0-5),
+    ``tags`` (must be a list), and ``note``. Verified against
+    easy-dataset/app/api/projects/[projectId]/datasets/[datasetId]/route.js.
+    Other fields are silently dropped.
+    """
+    body: dict[str, Any] = {}
+    if score is not None:
+        body["score"] = score
+    if tags is not None:
+        body["tags"] = list(tags)
+    if note is not None:
+        body["note"] = note
+    return backend.patch(
+        f"/api/projects/{project_id}/datasets/{dataset_id}", json_body=body
+    )
+
+
+def update_content(
+    backend: EasyDatasetBackend,
+    project_id: str,
+    dataset_id: str,
+    *,
+    question: str | None = None,
+    answer: str | None = None,
+    cot: str | None = None,
+    confirmed: bool | None = None,
+) -> dict[str, Any]:
+    """PATCH /api/projects/{id}/datasets?id={datasetId} — content + confirmed flag.
+
+    Server route is PATCH-only and accepts ``answer``, ``cot``, ``question``,
+    ``confirmed``. **Different endpoint** from :func:`update_metadata` because
+    upstream split content edits from review metadata. Verified against
+    easy-dataset/app/api/projects/[projectId]/datasets/route.js.
+    """
+    body: dict[str, Any] = {}
+    if question is not None:
+        body["question"] = question
+    if answer is not None:
+        body["answer"] = answer
+    if cot is not None:
+        body["cot"] = cot
+    if confirmed is not None:
+        body["confirmed"] = confirmed
+    return backend.patch(
+        f"/api/projects/{project_id}/datasets",
+        params={"id": dataset_id},
+        json_body=body,
+    )
+
+
+# Back-compat shim — older tests and a couple of internal callers still use
+# ``update``. Routes the call to whichever endpoint actually accepts each
+# field. Prefer the typed helpers above in new code.
 def update(
     backend: EasyDatasetBackend,
     project_id: str,
     dataset_id: str,
     **fields: Any,
 ) -> dict[str, Any]:
-    """PUT /api/projects/{id}/datasets/{datasetId} — confirm, score, tag, etc."""
-    return backend.put(
-        f"/api/projects/{project_id}/datasets/{dataset_id}", json_body=fields
-    )
+    metadata_fields = {k: v for k, v in fields.items() if k in {"score", "tags", "note"}}
+    content_fields = {
+        k: v for k, v in fields.items() if k in {"question", "answer", "cot", "confirmed"}
+    }
+    last: dict[str, Any] = {}
+    if content_fields:
+        last = update_content(backend, project_id, dataset_id, **content_fields)
+    if metadata_fields:
+        last = update_metadata(backend, project_id, dataset_id, **metadata_fields)
+    return last
 
 
 # ── Quality evaluation ─────────────────────────────────────────────────

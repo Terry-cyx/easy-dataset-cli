@@ -241,6 +241,14 @@ def _build_handler(state: _StubState):
             if path.endswith("/images"):
                 self._send_json(200, {"images": state.images})
                 return
+            if path.endswith("/dataset-conversations/export"):
+                # GET-only on the server. Return a ShareGPT-shaped array.
+                payload = [
+                    {"messages": c.get("messages", [])}
+                    for c in state.conversations
+                ]
+                self._send_json(200, payload)
+                return
             if path.endswith("/dataset-conversations"):
                 self._send_json(200, {"data": state.conversations})
                 return
@@ -636,13 +644,6 @@ def _build_handler(state: _StubState):
                 return
 
             # ── Refine round 2: multi-turn dialogue datasets ──
-            if path.endswith("/dataset-conversations/export"):
-                payload = [
-                    {"conversations": c.get("messages", [])}
-                    for c in state.conversations
-                ]
-                self._send_json(200, payload)
-                return
             if path.endswith("/dataset-conversations"):
                 qid = body.get("questionId", "?")
                 rounds = body.get("rounds", 3)
@@ -897,9 +898,10 @@ def _build_handler(state: _StubState):
             if path.endswith("/tasks") and not path.endswith("/list"):
                 # POST /tasks creates a new background task row. The body
                 # carries taskType, modelInfo, etc.
+                task_type = body.get("taskType")
                 task = {
                     "id": f"bg-{len(state.bg_tasks) + 1}",
-                    "taskType": body.get("taskType"),
+                    "taskType": task_type,
                     "status": 0,  # processing
                     "modelInfo": body.get("modelInfo"),
                     "language": body.get("language"),
@@ -907,6 +909,30 @@ def _build_handler(state: _StubState):
                     "totalCount": body.get("totalCount", 0),
                     "note": body.get("note", ""),
                 }
+                # Stub side-effect: image-question-generation creates one
+                # VQA question per image immediately and marks the task done.
+                if task_type == "image-question-generation":
+                    note_data = body.get("note") or {}
+                    if isinstance(note_data, str):
+                        try:
+                            note_data = json.loads(note_data)
+                        except Exception:
+                            note_data = {}
+                    qcount = int(note_data.get("questionCount", 1)) if isinstance(note_data, dict) else 1
+                    created = 0
+                    for img in state.images:
+                        for n in range(qcount):
+                            state.questions.append({
+                                "id": f"q-img-{img['id']}-{n + 1}",
+                                "question": f"VQA-{img['id']}-{n + 1}?",
+                                "chunkId": None,
+                                "imageId": img.get("id"),
+                                "answered": False,
+                            })
+                            created += 1
+                    task["status"] = 1  # completed
+                    task["completedCount"] = created
+                    task["totalCount"] = created
                 state.bg_tasks.append(task)
                 self._send_json(200, {"code": 0, "data": task, "message": "ok"})
                 return
@@ -1025,16 +1051,6 @@ def _build_handler(state: _StubState):
                 # see TestFullPipelineCase4 below.
                 self._send_json(200, dict(state.task_config))
                 return
-            if "/datasets/" in path:
-                # If body sets score / confirmed, mirror to state so the
-                # follow-up list/export sees it.
-                ds_id = path.split("/")[-1]
-                for d in state.datasets:
-                    if d["id"] == ds_id:
-                        d.update(body)
-                        break
-                self._send_json(200, {"updated": True, **body})
-                return
             if "/questions/templates/" in path:
                 tid = path.rsplit("/", 1)[-1]
                 tpl = next((t for t in state.templates if t.get("id") == tid), None)
@@ -1133,6 +1149,27 @@ def _build_handler(state: _StubState):
                         self._send_json(200, {"success": True, "data": p})
                         return
                 self._send_json(404, {"error": "ga_pair not found"})
+                return
+            # Datasets PATCH — TWO endpoints, both PATCH-only:
+            #   /datasets/{id}      → score / tags / note (review metadata)
+            #   /datasets?id={id}   → answer / cot / question / confirmed (content)
+            if path.endswith("/datasets") and "id" in parse_qs(url.query):
+                ds_id = parse_qs(url.query)["id"][0]
+                for d in state.datasets:
+                    if d["id"] == ds_id:
+                        d.update(body)
+                        self._send_json(200, {"success": True, "dataset": d})
+                        return
+                self._send_json(404, {"error": "dataset not found"})
+                return
+            if "/datasets/" in path and "/datasets/export" not in path and "/datasets/import" not in path and "/datasets/optimize" not in path and path.count("/") >= 5:
+                ds_id = path.rsplit("/", 1)[-1]
+                for d in state.datasets:
+                    if d["id"] == ds_id:
+                        d.update(body)
+                        self._send_json(200, {"success": True, "dataset": d})
+                        return
+                self._send_json(404, {"error": "dataset not found"})
                 return
             # Round 4: chunks PATCH (content update)
             if "/chunks/" in path and path.count("/") == 5:
@@ -1521,16 +1558,11 @@ class TestFullPipelineCase4:
 
         # Manually score one of the datasets server-side so the
         # score-filtered export has something to return. (In real usage the
-        # async batch task would do this; here we shortcut via PUT.)
+        # async batch task would do this; here we shortcut via PATCH — the
+        # server route is PATCH-only since the route.js refactor.)
         first_id = state.datasets[0]["id"]
         run("datasets", "confirm", first_id)
-        # Push score directly via the underlying PUT (using AppCtx is fine in
-        # the stub world)
-        import requests as _r
-        _r.put(
-            f"{base_url}/api/projects/{pid}/datasets/{first_id}",
-            json={"score": 4.5, "confirmed": True},
-        )
+        run("datasets", "edit", first_id, "--score", "4.5", "--confirmed")
 
         # 8. Filter list with --score-gte
         filtered = run("datasets", "list", "--score-gte", "4")
@@ -1712,7 +1744,7 @@ class TestFullPipelineCase1:
         assert ("POST", f"/api/projects/{pid}/model-config") in recorded
         assert ("POST", f"/api/projects/{pid}/images/zip-import") in recorded
         assert ("POST", f"/api/projects/{pid}/questions/templates") in recorded
-        assert ("POST", f"/api/projects/{pid}/generate-questions") in recorded
+        assert ("POST", f"/api/projects/{pid}/tasks") in recorded
         assert ("POST", f"/api/projects/{pid}/datasets") in recorded
         assert ("POST", f"/api/projects/{pid}/datasets/export") in recorded
         assert ("DELETE", f"/api/projects/{pid}/images") in recorded
@@ -1724,12 +1756,15 @@ class TestFullPipelineCase1:
         )
         assert post_mc["body"]["type"] == "vision"
 
-        # Verify generate-questions was called with sourceType=image
-        gq_calls = [
+        # Verify a /tasks call kicked off image-question-generation
+        task_calls = [
             r for r in state.requests
-            if r["method"] == "POST" and r["path"].endswith("/generate-questions")
+            if r["method"] == "POST" and r["path"].endswith("/tasks")
         ]
-        assert any(c["body"].get("sourceType") == "image" for c in gq_calls)
+        assert any(
+            c["body"].get("taskType") == "image-question-generation"
+            for c in task_calls
+        )
 
         print(
             f"\n  Case 1 VQA export: {out} ({os.path.getsize(out):,} bytes, "
@@ -1883,7 +1918,8 @@ class TestFullPipelineCase3:
         assert isinstance(records, list)
         assert len(records) == 2
         for rec in records:
-            assert "conversations" in rec
+            # Server returns ShareGPT-shaped {messages:[...]} on the GET endpoint
+            assert "messages" in rec
 
         # 9. Verify multi-turn export REJECTS alpaca (CLI Choice should reject
         #    non-sharegpt formats — confirm via subprocess return code)
@@ -1901,7 +1937,7 @@ class TestFullPipelineCase3:
         assert ("POST", f"/api/projects/{pid}/distill/questions") in recorded
         assert ("POST", f"/api/projects/{pid}/distill/tags") in recorded
         assert ("POST", f"/api/projects/{pid}/dataset-conversations") in recorded
-        assert ("POST", f"/api/projects/{pid}/dataset-conversations/export") in recorded
+        assert ("GET", f"/api/projects/{pid}/dataset-conversations/export") in recorded
 
         # Confirm the multi-turn POST body had rounds + roles
         mt_calls = [

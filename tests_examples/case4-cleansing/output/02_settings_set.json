@@ -1,0 +1,10 @@
+{
+  "updated": {
+    "textSplitMinLength": 300,
+    "textSplitMaxLength": 1500,
+    "concurrencyLimit": 2
+  },
+  "server_response": {
+    "message": "Task configuration updated successfully"
+  }
+}

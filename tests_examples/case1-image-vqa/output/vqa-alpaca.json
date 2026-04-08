@@ -1,0 +1,22 @@
+[
+  {
+    "instruction": "这个场景的主要颜色是什么？",
+    "input": "image://green_van.png",
+    "output": "这个场景的主要颜色是**绿色**（背景）和**深灰色/黑色**（货车主体和车轮）。其中绿色占据了画面的大部分面积，是最显眼的主色调。"
+  },
+  {
+    "instruction": "车辆的主体颜色是什么？",
+    "input": "image://green_van.png",
+    "output": "根据图片，车辆（货车）的主体颜色是**深灰色/黑色**（#2d2d2d 或接近黑色的深灰色）。\n\n虽然背景是绿色，且文字标注为\"GREEN VAN\"，但货车本身的主体颜色实际上是**深灰色（dark gray）**，车轮则是纯黑色。"
+  },
+  {
+    "instruction": "文字内容与车辆实际颜色是否一致？",
+    "input": "image://green_van.png",
+    "output": "不一致。\n\n**文字内容**：GREEN VAN（绿色货车）\n\n**实际车辆颜色**：深灰色/黑色\n\n背景是绿色的，但车辆本身是深灰色，与文字描述的\"GREEN\"不符。这是一个典型的**文字与图像不匹配**的例子。"
+  },
+  {
+    "instruction": "左上角的文字内容是什么？",
+    "input": "image://blue_truck.png",
+    "output": "左上角的文字内容是 **\"BLUE TRUCK\"**（蓝色卡车）。"
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "evalQuestionTypeRatios": {
+    "true_false": 2,
+    "single_choice": 1,
+    "multiple_choice": 1,
+    "short_answer": 1,
+    "open_ended": 0
+  },
+  "server_response": {
+    "message": "Task configuration updated successfully"
+  }
+}

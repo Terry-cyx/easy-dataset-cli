@@ -13,13 +13,16 @@ A stateful command-line interface that lets AI agents drive [Easy-Dataset](https
 
 | File | Read when you need to… |
 |---|---|
-| [`reference/01-getting-started.md`](reference/01-getting-started.md) | Install the CLI, start the server, verify the connection |
+| [`reference/01-getting-started.md`](reference/01-getting-started.md) | Install the CLI, start the server, verify the connection, pick a provider |
 | [`reference/02-command-reference.md`](reference/02-command-reference.md) | Look up a command group or global flag |
 | [`reference/03-canonical-pipeline.md`](reference/03-canonical-pipeline.md) | See the default 7-step recipe (use this first) |
 | [`reference/04-custom-prompts.md`](reference/04-custom-prompts.md) | **Write a custom prompt** — read this BEFORE writing one, or it will fail silently |
 | [`reference/05-decision-guide.md`](reference/05-decision-guide.md) | Choose between multiple options (chunk size, GA count, export format, etc.) |
-| [`reference/06-operating-rules.md`](reference/06-operating-rules.md) | Avoid the 10 known operational pitfalls (`--ga`, `model use`, client timeout, …) |
+| [`reference/06-operating-rules.md`](reference/06-operating-rules.md) | Avoid the **14** known operational pitfalls (`--ga`, `model use`, client timeout, concurrency, language, …) |
 | [`reference/07-agent-protocol.md`](reference/07-agent-protocol.md) | Drive the CLI from an AI agent — exit codes, retry policy, polling pattern |
+| [`reference/08-task-settings.md`](reference/08-task-settings.md) | Set project-wide knobs (chunk size, concurrency, MGA defaults, eval ratios, MinerU token) |
+| [`reference/09-pdf-and-data-cleaning.md`](reference/09-pdf-and-data-cleaning.md) | Pick a PDF parser (MinerU / vision) or batch-clean noisy chunks before generating Q&A |
+| [`reference/10-question-templates.md`](reference/10-question-templates.md) | Build a **classification** dataset (labels) or **structured extraction** dataset (JSON schema) |
 
 ## Workflow recipes (`reference/workflows/`)
 
@@ -28,8 +31,10 @@ End-to-end command sequences for specific scenarios. Each recipe assumes you've 
 | File | Scenario |
 |---|---|
 | [`workflows/custom-prompt-pipeline.md`](reference/workflows/custom-prompt-pipeline.md) | ★ End-to-end with custom question + evaluation prompts (production-grade recipe distilled from a real CFX_tutorials run) |
-| [`workflows/image-vqa.md`](reference/workflows/image-vqa.md) | Visual Question Answering from a directory of images |
-| [`workflows/multi-turn-distill.md`](reference/workflows/multi-turn-distill.md) | Multi-turn dialogue distillation from a topic tree (no source doc) |
+| [`workflows/sentiment-classification.md`](reference/workflows/sentiment-classification.md) | ★ Build a labeled classification dataset (案例 2: separator chunking + question template + label set) |
+| [`workflows/document-cleansing.md`](reference/workflows/document-cleansing.md) | ★ Long noisy PDF → batch cleansing → scored Q&A → score-filtered export (案例 4: full retake using `chunks clean-task`) |
+| [`workflows/image-vqa.md`](reference/workflows/image-vqa.md) | Visual Question Answering from a directory of images (案例 1) |
+| [`workflows/multi-turn-distill.md`](reference/workflows/multi-turn-distill.md) | Multi-turn dialogue distillation from a topic tree (案例 3: 物理学多轮对话) |
 | [`workflows/quality-control.md`](reference/workflows/quality-control.md) | Custom-separator chunking + cleaning + multi-dim evaluation + score-filtered export |
 | [`workflows/ga-mga-pairs.md`](reference/workflows/ga-mga-pairs.md) | Genre-Audience pair diversification |
 | [`workflows/eval-and-blind-test.md`](reference/workflows/eval-and-blind-test.md) | Benchmark evaluation + pairwise blind-test |

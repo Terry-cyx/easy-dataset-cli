@@ -1,0 +1,51 @@
+{
+  "success": true,
+  "count": 4,
+  "images": [
+    {
+      "id": "jf1-x4j3tNY2XZhj0F5Q1",
+      "projectId": "BeiPACFdxdCb",
+      "imageName": "temp_1775650092311_ai-edu-report-0001.png",
+      "path": "C:\\Users\\Administrator\\AppData\\Roaming\\easy-dataset\\local-db\\BeiPACFdxdCb/images/temp_1775650092311_ai-edu-report-0001.png",
+      "size": 185946,
+      "width": 3072,
+      "height": 2304,
+      "createAt": "2026-04-08T12:08:13.086Z",
+      "updateAt": "2026-04-08T12:08:13.086Z"
+    },
+    {
+      "id": "0ZctHPx_cXl4jG9kMz8yj",
+      "projectId": "BeiPACFdxdCb",
+      "imageName": "temp_1775650092311_ai-edu-report-0002.png",
+      "path": "C:\\Users\\Administrator\\AppData\\Roaming\\easy-dataset\\local-db\\BeiPACFdxdCb/images/temp_1775650092311_ai-edu-report-0002.png",
+      "size": 190410,
+      "width": 3072,
+      "height": 2304,
+      "createAt": "2026-04-08T12:08:13.096Z",
+      "updateAt": "2026-04-08T12:08:13.096Z"
+    },
+    {
+      "id": "UXLiOnDat-qVYfJdlbKWo",
+      "projectId": "BeiPACFdxdCb",
+      "imageName": "temp_1775650092311_ai-edu-report-0003.png",
+      "path": "C:\\Users\\Administrator\\AppData\\Roaming\\easy-dataset\\local-db\\BeiPACFdxdCb/images/temp_1775650092311_ai-edu-report-0003.png",
+      "size": 191821,
+      "width": 3072,
+      "height": 2304,
+      "createAt": "2026-04-08T12:08:13.105Z",
+      "updateAt": "2026-04-08T12:08:13.105Z"
+    },
+    {
+      "id": "ohb_ykwoTdhKHBELlzEim",
+      "projectId": "BeiPACFdxdCb",
+      "imageName": "temp_1775650092311_ai-edu-report-0004.png",
+      "path": "C:\\Users\\Administrator\\AppData\\Roaming\\easy-dataset\\local-db\\BeiPACFdxdCb/images/temp_1775650092311_ai-edu-report-0004.png",
+      "size": 189179,
+      "width": 3072,
+      "height": 2304,
+      "createAt": "2026-04-08T12:08:13.114Z",
+      "updateAt": "2026-04-08T12:08:13.114Z"
+    }
+  ],
+  "pdfName": "ai-edu-report.pdf"
+}

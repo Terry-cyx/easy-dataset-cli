@@ -58,6 +58,44 @@ TASK_TYPES = (
 )
 
 
+def create_task(
+    backend: EasyDatasetBackend,
+    project_id: str,
+    *,
+    task_type: str,
+    model_info: dict[str, Any] | None = None,
+    note: dict[str, Any] | str | None = None,
+    language: str | None = None,
+    detail: str = "",
+    total_count: int = 0,
+) -> dict[str, Any]:
+    """POST /api/projects/{id}/tasks — kick off a background task.
+
+    The server creates the row immediately and starts ``processTask`` in the
+    background. Caller polls via ``wait_for(...)`` (or ``task wait`` from the
+    CLI) on the returned ``data.id``.
+
+    ``task_type`` must be one of :data:`TASK_TYPES`. ``note`` can be a dict
+    (will be JSON-stringified server-side) carrying task-specific parameters,
+    e.g. ``{"chunkIds": [...]}`` for ``data-cleaning``, or
+    ``{"fileList": [...], "strategy": "default"}`` for ``file-processing``.
+    """
+    if task_type not in TASK_TYPES:
+        raise ValueError(
+            f"Unknown task_type {task_type!r}; must be one of {TASK_TYPES}"
+        )
+    body: dict[str, Any] = {
+        "taskType": task_type,
+        "modelInfo": model_info or {},
+        "language": language or "zh-CN",
+        "detail": detail,
+        "totalCount": total_count,
+    }
+    if note is not None:
+        body["note"] = note
+    return backend.post(f"/api/projects/{project_id}/tasks", json_body=body)
+
+
 def list_tasks(
     backend: EasyDatasetBackend,
     project_id: str,

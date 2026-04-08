@@ -1,0 +1,74 @@
+[
+  {
+    "id": "5IvI8_cKvdxS-NCppZ_Vq",
+    "projectId": "BeiPACFdxdCb",
+    "chunkId": "Is4mb4ojtkKIZotoen9nK",
+    "gaPairId": null,
+    "question": "\u57282026\u5e74\u9006\u98ce\u56e0\u7d20\u5206\u6790\u4e2d\uff0c\u9690\u79c1\uff08Privacy\uff09\u3001\u6210\u672c\uff08Cost\uff09\u548c\u4fe1\u4efb\uff08Trust\uff09\u4e09\u9879\u6307\u6807\u7684\u62c5\u5fe7\u6307\u6570\u5206\u522b\u4e3a\u591a\u5c11\uff1f",
+    "label": "image",
+    "answered": false,
+    "imageId": "ohb_ykwoTdhKHBELlzEim",
+    "imageName": "temp_1775650092311_ai-edu-report-0004.png",
+    "templateId": null,
+    "createAt": "2026-04-08T12:09:13.606Z",
+    "updateAt": "2026-04-08T12:09:13.606Z",
+    "chunk": {
+      "name": "Image Chunk",
+      "content": ""
+    }
+  },
+  {
+    "id": "MkYYmDGdm4SzJcf99vFxc",
+    "projectId": "BeiPACFdxdCb",
+    "chunkId": "Is4mb4ojtkKIZotoen9nK",
+    "gaPairId": null,
+    "question": "2026\u5e74\u9006\u98ce\u56e0\u7d20\u5206\u6790\u663e\u793a\uff0c\u4fe1\u4efb\u62c5\u5fe7\u6307\u657090\u3001\u9690\u79c1\u62c5\u5fe7\u6307\u657078\u3001\u6210\u672c\u62c5\u5fe7\u6307\u657055\uff0c\u54ea\u4e00\u9879\u6307\u6807\u7684\u62c5\u5fe7\u7a0b\u5ea6\u6700\u9ad8\uff0c\u54ea\u4e00\u9879\u6700\u4f4e\uff1f",
+    "label": "image",
+    "answered": false,
+    "imageId": "ohb_ykwoTdhKHBELlzEim",
+    "imageName": "temp_1775650092311_ai-edu-report-0004.png",
+    "templateId": null,
+    "createAt": "2026-04-08T12:09:13.606Z",
+    "updateAt": "2026-04-08T12:09:13.606Z",
+    "chunk": {
+      "name": "Image Chunk",
+      "content": ""
+    }
+  },
+  {
+    "id": "F5HJnKxXkHVS9re1lGInk",
+    "projectId": "BeiPACFdxdCb",
+    "chunkId": "Is4mb4ojtkKIZotoen9nK",
+    "gaPairId": null,
+    "question": "\u5728Top 3 Use Cases\u4e2d\uff0cContent\u7684\u91c7\u7528\u6307\u6570\uff08Adoption index\uff09\u4e3a300\uff0cTutoring\u7684\u91c7\u7528\u6307\u6570\u4e3a220\uff0cContent\u6bd4Tutoring\u9ad8\u51fa\u591a\u5c11\uff1f",
+    "label": "image",
+    "answered": false,
+    "imageId": "0ZctHPx_cXl4jG9kMz8yj",
+    "imageName": "temp_1775650092311_ai-edu-report-0002.png",
+    "templateId": null,
+    "createAt": "2026-04-08T12:09:12.789Z",
+    "updateAt": "2026-04-08T12:09:12.789Z",
+    "chunk": {
+      "name": "Image Chunk",
+      "content": ""
+    }
+  },
+  {
+    "id": "YZCE6Jx9vaLLFSjRR30n9",
+    "projectId": "BeiPACFdxdCb",
+    "chunkId": "Is4mb4ojtkKIZotoen9nK",
+    "gaPairId": null,
+    "question": "Top 3 Use Cases\u4e2d\u4e09\u4e2a\u5e94\u7528\u573a\u666f\u7684\u91c7\u7528\u6307\u6570\uff08Adoption index\uff0c\u8303\u56f40-400\uff09\u5206\u522b\u662f\uff1aTutoring 220\u3001Grading 140\u3001Content 300\uff0c\u8fd9\u4e09\u4e2a\u6570\u503c\u7684\u603b\u548c\u662f\u591a\u5c11\uff1f",
+    "label": "image",
+    "answered": false,
+    "imageId": "0ZctHPx_cXl4jG9kMz8yj",
+    "imageName": "temp_1775650092311_ai-edu-report-0002.png",
+    "templateId": null,
+    "createAt": "2026-04-08T12:09:12.789Z",
+    "updateAt": "2026-04-08T12:09:12.789Z",
+    "chunk": {
+      "name": "Image Chunk",
+      "content": ""
+    }
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "instruction": "在Top 3 Use Cases中，Content的采用指数（Adoption index）为300，Tutoring的采用指数为220，Content比Tutoring高出多少？",
+    "input": "",
+    "output": "根据提供的数据：\n- Content 的采用指数：**300**\n- Tutoring 的采用指数：**220**\n\nContent 比 Tutoring 高出：**300 - 220 = 80**（即高出 **80**）"
+  },
+  {
+    "instruction": "Top 3 Use Cases中三个应用场景的采用指数（Adoption index，范围0-400）分别是：Tutoring 220、Grading 140、Content 300，这三个数值的总和是多少？",
+    "input": "",
+    "output": "我需要计算三个采用指数的总和：\n\n- Tutoring: 220\n- Grading: 140\n- Content: 300\n\n**总和 = 220 + 140 + 300 = 660**"
+  }
+]

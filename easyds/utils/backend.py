@@ -150,8 +150,13 @@ class EasyDatasetBackend:
     def put(self, path: str, json_body: Any = None) -> Any:
         return self._request("PUT", path, json_body=json_body)
 
-    def patch(self, path: str, json_body: Any = None) -> Any:
-        return self._request("PATCH", path, json_body=json_body)
+    def patch(
+        self,
+        path: str,
+        json_body: Any = None,
+        params: dict | None = None,
+    ) -> Any:
+        return self._request("PATCH", path, params=params, json_body=json_body)
 
     def delete(
         self,

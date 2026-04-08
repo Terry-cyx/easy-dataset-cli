@@ -1,0 +1,18 @@
+{
+  "id": "lnmV7y7gL9Yu",
+  "projectId": "BeiPACFdxdCb",
+  "providerId": "openai",
+  "providerName": "Paratera",
+  "endpoint": "https://llmapi.paratera.com/v1/",
+  "apiKey": "sk-sbwZdqOyMGyTxYc7A-Q4Dg",
+  "modelId": "Kimi-K2.5",
+  "modelName": "Kimi-K2.5",
+  "type": "vision",
+  "temperature": 0.4,
+  "maxTokens": 4096,
+  "topP": 0.9,
+  "topK": 0,
+  "status": 1,
+  "createAt": "2026-04-08T12:08:01.699Z",
+  "updateAt": "2026-04-08T12:08:01.699Z"
+}

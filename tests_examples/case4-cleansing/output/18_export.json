@@ -1,0 +1,8 @@
+{
+  "output": "E:\\EDS-CLI\\easy-dataset-cli\\tests_examples\\case4-cleansing\\output\\safety-alpaca.json",
+  "format": "alpaca",
+  "file_type": "json",
+  "size": 3810,
+  "count": 3,
+  "field_map": {}
+}

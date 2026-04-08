@@ -141,11 +141,13 @@ def export_conversations(
     output_path: str,
     fmt: str = "sharegpt",
     overwrite: bool = False,
+    confirmed_only: bool = False,
 ) -> dict[str, Any]:
-    """POST /api/projects/{id}/dataset-conversations/export — write multi-turn JSON.
+    """GET /api/projects/{id}/dataset-conversations/export — write multi-turn JSON.
 
     Forces ShareGPT format (per spec/04 §L9). Raises ``ValueError`` for any
-    other format.
+    other format. The server route is **GET-only** and returns the data
+    directly as a ShareGPT-shaped JSON array; we just save it to disk.
     """
     validate_multi_turn_format(fmt)
 
@@ -154,9 +156,12 @@ def export_conversations(
             f"{output_path} already exists. Pass --overwrite to replace it."
         )
 
-    result = backend.post(
+    params: dict[str, Any] = {}
+    if confirmed_only:
+        params["confirmed"] = "true"
+    result = backend.get(
         f"/api/projects/{project_id}/dataset-conversations/export",
-        json_body={"format": fmt},
+        params=params or None,
     )
     if isinstance(result, dict) and "data" in result:
         records = result["data"]

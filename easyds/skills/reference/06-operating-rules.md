@@ -141,3 +141,78 @@ The server is the source of truth. If they disagree, fix the local session by re
 ```
 
 The fix is in the message itself. Read it, change the request, retry. Don't guess.
+
+---
+
+## Rule 11 — Tune `concurrencyLimit` to your provider's free-tier rate limit
+
+```bash
+# Symptom: "tasks suddenly start failing in the middle"
+easyds --json project settings set --key concurrencyLimit --value 1
+```
+
+Why: the default is **5** parallel LLM calls. Free-tier providers (SiliconFlow,
+OpenRouter free models, public Ollama proxies) commonly rate-limit at 1–3 RPS.
+A 50-question batch will run fine for the first ~10 then start spitting 429s.
+The CLI surfaces those as task-row errors that look mysterious.
+
+Set this **per project** in `task-config.json` via `project settings set`. There
+is no per-command flag — see [`08-task-settings.md`](08-task-settings.md).
+
+---
+
+## Rule 12 — Use a model that can produce stable JSON
+
+Many endpoints (`questions generate`, `datasets evaluate`, custom prompts) rely
+on the LLM emitting parseable JSON. Small / older / heavily-quantized local
+models routinely fail this:
+
+- They prepend `Sure, here is the JSON:`
+- They wrap the array in Markdown code fences
+- They add trailing commas
+- They forget to close the brackets
+
+**Don't waste time debugging the prompt** if you're seeing intermittent batch
+loss with a small model. Switch to a competent model (gpt-4o-mini, deepseek-v3,
+qwen-2.5-32b-instruct or larger). Re-test on **one chunk** first.
+
+The server's JSON extractor is strict; there is no "best-effort repair" path.
+
+---
+
+## Rule 13 — `language` is per-call AND project-wide. Set both.
+
+```bash
+# Per-call (used by question gen / dataset gen / eval gen)
+easyds questions generate --ga --language 中文
+easyds questions generate --ga --language English
+
+# Project-wide default for tasks that don't expose --language
+easyds project settings set --key language --value 中文
+```
+
+The official docs note that the GUI's "current user language" decides what
+language **all newly generated content** is in. From the CLI: pass `--language`
+on every generation command, **and** set the project-wide default for the
+batch/distillation tasks that read from task-config.
+
+Mixed-language datasets (some Chinese, some English) almost always trace back
+to forgetting one of these.
+
+---
+
+## Rule 14 — Choose a domain-tree action when adding/removing files
+
+When `chunks split` runs, it triggers domain-tree (re)building. After your
+**first** file the tree is built fresh; after the second file you have a
+choice:
+
+| `--domain-tree-action` | Behavior | When |
+|---|---|---|
+| `rebuild` (default) | Discard the existing tree and re-derive from all current files | Most cases — tree stays consistent |
+| `modify` | Diff-update for added/removed files only | Cheap, but the tree drifts over time |
+| `keep` | Don't touch the tree | **Use after you've manually curated it** with the `tags` group |
+
+The single most painful pattern: spend 30 minutes editing the tree by hand,
+upload one more file, lose all your edits. Set `--domain-tree-action keep` on
+incremental uploads after curation.

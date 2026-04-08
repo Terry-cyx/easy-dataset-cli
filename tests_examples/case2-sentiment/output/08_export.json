@@ -1,0 +1,8 @@
+{
+  "output": "E:\\EDS-CLI\\easy-dataset-cli\\tests_examples\\case2-sentiment\\output\\sentiment-alpaca.json",
+  "format": "alpaca",
+  "file_type": "json",
+  "size": 1466,
+  "count": 8,
+  "field_map": {}
+}

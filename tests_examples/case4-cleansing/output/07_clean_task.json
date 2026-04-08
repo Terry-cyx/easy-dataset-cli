@@ -1,0 +1,36 @@
+{
+  "taskId": "xSMqAxva83cHJOXtWs9Ci",
+  "task": {
+    "id": "xSMqAxva83cHJOXtWs9Ci",
+    "projectId": "GTf8sev4sCpa",
+    "taskType": "data-cleaning",
+    "status": 0,
+    "startTime": "2026-04-08T11:35:10.069Z",
+    "endTime": null,
+    "completedCount": 0,
+    "totalCount": 0,
+    "modelInfo": "{\"id\":\"ObnkheQNTGe0\",\"projectId\":\"GTf8sev4sCpa\",\"providerId\":\"openai\",\"providerName\":\"Paratera\",\"endpoint\":\"https://llmapi.paratera.com/v1/\",\"apiKey\":\"sk-sbwZdqOyMGyTxYc7A-Q4Dg\",\"modelId\":\"Kimi-K2.5\",\"modelName\":\"Kimi-K2.5\",\"type\":\"text\",\"temperature\":0.4,\"maxTokens\":4096,\"topP\":0.9,\"topK\":0,\"status\":1,\"createAt\":\"2026-04-08T11:34:47.388Z\",\"updateAt\":\"2026-04-08T11:34:47.388Z\"}",
+    "language": "zh-CN",
+    "detail": "",
+    "note": "{\"chunkIds\":[\"q-gFwYmS\",\"nqi8CsKZ\"]}",
+    "createAt": "2026-04-08T11:35:10.069Z",
+    "updateAt": "2026-04-08T11:35:10.069Z"
+  },
+  "scope": "2 chunks",
+  "final": {
+    "id": "xSMqAxva83cHJOXtWs9Ci",
+    "projectId": "GTf8sev4sCpa",
+    "taskType": "data-cleaning",
+    "status": 1,
+    "startTime": "2026-04-08T11:35:10.069Z",
+    "endTime": "2026-04-08T11:36:32.006Z",
+    "completedCount": 3,
+    "totalCount": 3,
+    "modelInfo": "{\"id\":\"ObnkheQNTGe0\",\"projectId\":\"GTf8sev4sCpa\",\"providerId\":\"openai\",\"providerName\":\"Paratera\",\"endpoint\":\"https://llmapi.paratera.com/v1/\",\"apiKey\":\"sk-sbwZdqOyMGyTxYc7A-Q4Dg\",\"modelId\":\"Kimi-K2.5\",\"modelName\":\"Kimi-K2.5\",\"type\":\"text\",\"temperature\":0.4,\"maxTokens\":4096,\"topP\":0.9,\"topK\":0,\"status\":1,\"createAt\":\"2026-04-08T11:34:47.388Z\",\"updateAt\":\"2026-04-08T11:34:47.388Z\"}",
+    "language": "zh-CN",
+    "detail": "",
+    "note": "",
+    "createAt": "2026-04-08T11:35:10.069Z",
+    "updateAt": "2026-04-08T11:36:32.007Z"
+  }
+}

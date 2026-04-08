@@ -245,6 +245,121 @@ def project_delete(app: AppCtx, project_id: str):
     app.emit(result or {"deleted": project_id}, human_label="Deleted")
 
 
+# ── project settings (task-config.json) ──────────────────────────────
+
+EVAL_QUESTION_TYPES = (
+    "true_false", "single_choice", "multiple_choice", "short_answer", "open_ended",
+)
+
+
+@project_grp.group("settings")
+def project_settings_grp():
+    """Read & write the per-project task-config.json (chunking, concurrency, MGA, eval ratios)."""
+
+
+@project_settings_grp.command("show")
+@click.pass_obj
+@_handle_errors
+def project_settings_show(app: AppCtx):
+    """Dump the current task-config.json for the active project."""
+    app.emit(project_mod.get_task_config(app.backend, app.project_id()))
+
+
+def _coerce_setting_value(raw: str) -> Any:
+    """Best-effort cast: int → float → bool → JSON → str."""
+    s = raw.strip()
+    if s.lower() in ("true", "false"):
+        return s.lower() == "true"
+    try:
+        return int(s)
+    except ValueError:
+        pass
+    try:
+        return float(s)
+    except ValueError:
+        pass
+    if s.startswith(("{", "[", '"')):
+        try:
+            return json.loads(s)
+        except json.JSONDecodeError:
+            pass
+    return s
+
+
+@project_settings_grp.command("set")
+@click.option("--key", "key", required=False,
+              help="Setting key to update (e.g. textSplitMinLength). "
+                   "Use --json for bulk updates.")
+@click.option("--value", "value", required=False,
+              help="New value (auto-cast to int/float/bool/JSON).")
+@click.option("--json", "json_payload", default=None,
+              help='Bulk JSON payload, e.g. \'{"concurrencyLimit":3,"questionGenerationLength":300}\'')
+@click.pass_obj
+@_handle_errors
+def project_settings_set(
+    app: AppCtx,
+    key: str | None,
+    value: str | None,
+    json_payload: str | None,
+):
+    """Merge one or more fields into task-config.json (server PUT is a wholesale
+    replace, but the core helper preserves unmentioned fields)."""
+    if json_payload:
+        try:
+            fields = json.loads(json_payload)
+        except json.JSONDecodeError as e:
+            raise click.UsageError(f"--json must be valid JSON: {e}")
+        if not isinstance(fields, dict):
+            raise click.UsageError("--json must decode to an object")
+    elif key is not None and value is not None:
+        fields = {key: _coerce_setting_value(value)}
+    else:
+        raise click.UsageError("provide --key + --value, or --json")
+
+    result = project_mod.set_task_config(app.backend, app.project_id(), **fields)
+    app.emit(
+        {"updated": fields, "server_response": result},
+        human_label="task-config.json updated",
+    )
+
+
+@project_settings_grp.command("set-eval-ratios")
+@click.option("--true-false", "true_false", type=int, default=1, show_default=True)
+@click.option("--single", "single_choice", type=int, default=1, show_default=True)
+@click.option("--multi", "multiple_choice", type=int, default=1, show_default=True)
+@click.option("--short", "short_answer", type=int, default=1, show_default=True)
+@click.option("--open", "open_ended", type=int, default=1, show_default=True)
+@click.pass_obj
+@_handle_errors
+def project_settings_set_eval_ratios(
+    app: AppCtx,
+    true_false: int,
+    single_choice: int,
+    multiple_choice: int,
+    short_answer: int,
+    open_ended: int,
+):
+    """Set evalQuestionTypeRatios in task-config.json — used by `eval generate`.
+
+    The five integers are weights, not percentages. Server normalizes them.
+    Set any to 0 to skip that question type entirely.
+    """
+    ratios = {
+        "true_false": true_false,
+        "single_choice": single_choice,
+        "multiple_choice": multiple_choice,
+        "short_answer": short_answer,
+        "open_ended": open_ended,
+    }
+    result = project_mod.set_task_config(
+        app.backend, app.project_id(), evalQuestionTypeRatios=ratios,
+    )
+    app.emit(
+        {"evalQuestionTypeRatios": ratios, "server_response": result},
+        human_label="eval ratios updated",
+    )
+
+
 # ── model group ────────────────────────────────────────────────────────
 
 
@@ -410,6 +525,120 @@ def files_import(
     else:
         result = files_mod.import_pdf_as_images(app.backend, pid, pdf_path)
         app.emit(result, human_label=f"Converted {os.path.basename(pdf_path)} to page images")
+
+
+PDF_STRATEGIES = ("default", "mineru", "mineru-local", "vision")
+
+
+@files_grp.command("process")
+@click.option("--file", "file_specs", multiple=True,
+              help="Either fileName or fileId (repeatable). Omit = process all PDFs in project.")
+@click.option("--strategy",
+              type=click.Choice(list(PDF_STRATEGIES)),
+              default="default", show_default=True,
+              help="PDF parser: default (basic), mineru (API), mineru-local (self-hosted), vision (custom vision model).")
+@click.option("--vision-model-config", "vision_model_id", default=None,
+              help="Required when --strategy vision. Defaults to the project's active vision model.")
+@click.option("--language", default="zh-CN", show_default=True)
+@click.option("--domain-tree-action",
+              type=click.Choice(["modify", "rebuild", "keep"]),
+              default="rebuild", show_default=True,
+              help="What to do with the domain tree after processing.")
+@click.option("--wait/--no-wait", default=False)
+@click.option("--timeout", type=float, default=3600.0, show_default=True)
+@click.pass_obj
+@_handle_errors
+def files_process(
+    app: AppCtx,
+    file_specs: tuple[str, ...],
+    strategy: str,
+    vision_model_id: str | None,
+    language: str,
+    domain_tree_action: str,
+    wait: bool,
+    timeout: float,
+):
+    """Re-process uploaded files with a chosen PDF parser (案例 5 视觉解析).
+
+    Wraps POST /tasks {taskType:"file-processing", note:{strategy, fileList, ...}}.
+    Use this when the default PDF parser fell short and you want to re-run with
+    MinerU or a custom vision model.
+    """
+    pid = app.project_id()
+    all_files = files_mod.list_files(app.backend, pid)
+    if not isinstance(all_files, list):
+        all_files = []
+
+    def _match(f: dict[str, Any]) -> bool:
+        if not file_specs:
+            return str(f.get("fileName", "")).lower().endswith(".pdf")
+        return f.get("id") in file_specs or f.get("fileName") in file_specs
+
+    selected = [
+        {"fileId": f.get("id"), "fileName": f.get("fileName")}
+        for f in all_files if isinstance(f, dict) and _match(f)
+    ]
+    if not selected:
+        raise click.UsageError(
+            "no matching files found in this project. Run `easyds files list` first."
+        )
+
+    # text model (drives chunk-time domain tree); vision model only for --strategy vision
+    text_mid = session_mod.resolve_model_config_id(None)
+    configs = model_mod.list_configs(app.backend, pid)
+    text_model = next((c for c in configs if isinstance(c, dict) and c.get("id") == text_mid), None)
+    if not text_model:
+        raise click.UsageError(
+            f"current model config {text_mid!r} not found. Run `easyds model use <id>` first."
+        )
+
+    vsion_model = None
+    if strategy == "vision":
+        target = vision_model_id
+        vsion_model = next(
+            (c for c in configs if isinstance(c, dict) and c.get("id") == target and c.get("type") == "vision"),
+            None,
+        )
+        if vsion_model is None:
+            vsion_model = next(
+                (c for c in configs if isinstance(c, dict) and c.get("type") == "vision"),
+                None,
+            )
+        if vsion_model is None:
+            raise click.UsageError(
+                "--strategy vision requires a vision model config. Register one with "
+                "`easyds model set --type vision`."
+            )
+
+    note: dict[str, Any] = {
+        "projectId": pid,
+        "fileList": selected,
+        "strategy": strategy,
+        "domainTreeAction": domain_tree_action,
+    }
+    if vsion_model:
+        note["vsionModel"] = vsion_model
+
+    result = tasks_mod.create_task(
+        app.backend, pid,
+        task_type="file-processing",
+        model_info=text_model,
+        note=note,
+        language=language,
+    )
+    task = (result or {}).get("data") or {}
+    task_id = task.get("id")
+    payload = {
+        "taskId": task_id,
+        "task": task,
+        "files": selected,
+        "strategy": strategy,
+    }
+    if wait and task_id:
+        payload["final"] = tasks_mod.wait_for(
+            app.backend, pid, task_id, timeout=timeout, poll_interval=2.0,
+        )
+    app.emit(payload, human_label=f"file-processing task {task_id} kicked off")
 
 
 @files_grp.command("list-images")
@@ -641,6 +870,74 @@ def chunks_clean(
     app.emit(result, human_label=f"Chunk {chunk_id} cleaned")
 
 
+@chunks_grp.command("clean-task")
+@click.option("--chunk", "chunk_ids", multiple=True,
+              help="Specific chunk id to clean (repeatable). Omit = clean all chunks.")
+@click.option("--language", default="zh-CN", show_default=True)
+@click.option("--prompt-file", type=click.Path(exists=True, dir_okay=False),
+              default=None,
+              help="Save this file as the project's dataClean prompt before "
+                   "kicking off the task.")
+@click.option("--prompt-language", default="zh-CN", show_default=True)
+@click.option("--wait/--no-wait", default=False,
+              help="Block until the task reaches a terminal status.")
+@click.option("--timeout", type=float, default=3600.0, show_default=True)
+@click.pass_obj
+@_handle_errors
+def chunks_clean_task(
+    app: AppCtx,
+    chunk_ids: tuple[str, ...],
+    language: str,
+    prompt_file: str | None,
+    prompt_language: str,
+    wait: bool,
+    timeout: float,
+):
+    """Kick off a background data-cleaning task across many chunks (案例 4 自动清洗).
+
+    Wraps POST /tasks {taskType:"data-cleaning", note:{chunkIds:[...]}}.
+    Empty --chunk list = clean every non-image, non-distilled chunk in the
+    project. Pair with --wait or `easyds task wait <id>`.
+    """
+    pid = app.project_id()
+    if prompt_file:
+        with open(prompt_file, "r", encoding="utf-8") as fh:
+            content = fh.read()
+        prompts_mod.save_prompt(
+            app.backend, pid,
+            prompt_type="dataClean",
+            prompt_key="DATA_CLEAN_PROMPT" if prompt_language == "zh-CN" else "DATA_CLEAN_PROMPT_EN",
+            language=prompt_language,
+            content=content,
+        )
+    mid = session_mod.resolve_model_config_id(None)
+    configs = model_mod.list_configs(app.backend, pid)
+    model_obj = next((c for c in configs if isinstance(c, dict) and c.get("id") == mid), None)
+    if not model_obj:
+        raise click.UsageError(
+            f"current model config {mid!r} not found in project. Run `easyds model use <id>` first."
+        )
+    note: dict[str, Any] = {}
+    if chunk_ids:
+        note["chunkIds"] = list(chunk_ids)
+    result = tasks_mod.create_task(
+        app.backend, pid,
+        task_type="data-cleaning",
+        model_info=model_obj,
+        note=note,
+        language=language,
+    )
+    task = (result or {}).get("data") or {}
+    task_id = task.get("id")
+    payload = {"taskId": task_id, "task": task, "scope": "all" if not chunk_ids else f"{len(chunk_ids)} chunks"}
+    if wait and task_id:
+        final = tasks_mod.wait_for(
+            app.backend, pid, task_id, timeout=timeout, poll_interval=2.0,
+        )
+        payload["final"] = final
+    app.emit(payload, human_label=f"data-cleaning task {task_id} kicked off")
+
+
 @chunks_grp.command("batch-edit")
 @click.option("--chunk", "chunk_ids", multiple=True, required=True,
               help="Chunk id (repeatable).")
@@ -685,23 +982,29 @@ def questions_grp():
 
 @questions_grp.command("generate")
 @click.option("--chunk", "chunk_ids", multiple=True, help="Chunk id (repeatable). Empty = all chunks.")
-@click.option("--image", "image_ids", multiple=True, help="Image id (repeatable, only with --source image). Empty = all images.")
 @click.option("--source", type=click.Choice(list(questions_mod.VALID_SOURCES)),
               default="chunk", show_default=True,
-              help="Source type. 'image' auto-selects the project's vision model.")
+              help="Source type. 'image' auto-selects the project's vision model and uses the image-question-generation background task.")
 @click.option("--model-config", "model_config_id", default=None)
 @click.option("--ga", "enable_ga", is_flag=True, help="Enable Genre/Audience expansion.")
 @click.option("--language", default="en")
+@click.option("--question-count", type=click.IntRange(1, 10), default=3, show_default=True,
+              help="Questions per image (only with --source image).")
+@click.option("--wait", is_flag=True, help="Poll until the image task finishes (only with --source image).")
+@click.option("--timeout", type=float, default=600.0, show_default=True,
+              help="Max seconds to wait when --wait is set.")
 @click.pass_obj
 @_handle_errors
 def questions_generate(
     app: AppCtx,
     chunk_ids: tuple[str, ...],
-    image_ids: tuple[str, ...],
     source: str,
     model_config_id: str | None,
     enable_ga: bool,
     language: str,
+    question_count: int,
+    wait: bool,
+    timeout: float,
 ):
     """Generate questions from chunks (text) or images (VQA, 案例 1)."""
     pid = app.project_id()
@@ -716,27 +1019,47 @@ def questions_generate(
                     "no vision-type model config registered. "
                     "Run 'easyds model set --type vision ...' first."
                 )
-            mid = vision.get("id")
+            vision_cfg = vision
         else:
             mid = session_mod.resolve_model_config_id(model_config_id)
-
-        if not image_ids:
-            imgs = files_mod.list_images(app.backend, pid)
-            image_ids = tuple(
-                i["id"] for i in imgs if isinstance(i, dict) and "id" in i
+            configs = model_mod.list_configs(app.backend, pid)
+            vision_cfg = next(
+                (c for c in configs if isinstance(c, dict) and c.get("id") == mid),
+                None,
             )
-        if not image_ids:
+            if vision_cfg is None:
+                raise click.UsageError(f"model config {mid!r} not found in project")
+
+        # Sanity-check there are images to process; the task itself walks
+        # all images without questions, so an empty project would just
+        # produce a no-op task.
+        imgs = files_mod.list_images(app.backend, pid)
+        if not imgs:
             raise click.UsageError(
                 "no images in project. Run 'easyds files import --type image --dir ...'."
             )
-        result = questions_mod.generate(
-            app.backend, pid, [], mid,
-            enable_ga_expansion=enable_ga,
-            language=language,
-            source="image",
-            image_ids=list(image_ids),
+
+        task = tasks_mod.create_task(
+            app.backend, pid,
+            task_type="image-question-generation",
+            model_info=vision_cfg,
+            note={"questionCount": question_count},
+            language=("zh-CN" if language.startswith(("中", "zh")) else "en"),
         )
-        app.emit(result, human_label=f"Generated VQA questions for {len(image_ids)} image(s)")
+        task_id = (task.get("data") or {}).get("id") if isinstance(task, dict) else None
+        if wait and task_id:
+            final = tasks_mod.wait_for(
+                app.backend, pid, task_id, timeout=timeout,
+            )
+            app.emit(
+                final,
+                human_label=f"Image question generation task {task_id} finished",
+            )
+            return
+        app.emit(
+            task,
+            human_label=f"Kicked off image-question-generation task ({question_count} q/image, {len(imgs)} images)",
+        )
         return
 
     mid = session_mod.resolve_model_config_id(model_config_id)
@@ -996,6 +1319,12 @@ def datasets_grp():
 
 @datasets_grp.command("generate")
 @click.option("--question", "question_ids", multiple=True, help="Question id (repeatable). Empty = all unanswered.")
+@click.option("--source", type=click.Choice(["chunk", "image"]), default="chunk", show_default=True,
+              help="Dataset source. 'image' kicks off the image-dataset-generation background task "
+                   "(case 1 — VQA) which calls the vision model with each image attached.")
+@click.option("--wait", is_flag=True, help="Poll until the image task finishes (only with --source image).")
+@click.option("--timeout", type=float, default=900.0, show_default=True,
+              help="Max seconds to wait when --wait is set with --source image.")
 @click.option("--model-config", "model_config_id", default=None)
 @click.option("--language", default="en")
 @click.option("--rounds", type=int, default=None,
@@ -1015,6 +1344,9 @@ def datasets_grp():
 def datasets_generate(
     app: AppCtx,
     question_ids: tuple[str, ...],
+    source: str,
+    wait: bool,
+    timeout: float,
     model_config_id: str | None,
     language: str,
     rounds: int | None,
@@ -1028,9 +1360,52 @@ def datasets_generate(
 
     With ``--rounds N`` switches to multi-turn dialogue mode and routes to
     /api/projects/{id}/dataset-conversations (case 3 — physics tutor).
+    With ``--source image`` routes to the image-dataset-generation task
+    so the vision model receives each image (case 1 — VQA).
     """
     pid = app.project_id()
     mid = session_mod.resolve_model_config_id(model_config_id)
+
+    # ── image VQA branch ───────────────────────────────────────────
+    if source == "image":
+        configs = model_mod.list_configs(app.backend, pid)
+        if model_config_id is None:
+            vision = model_mod.find_config_by_type(configs, "vision")
+            if not vision:
+                raise click.UsageError(
+                    "no vision-type model config registered. "
+                    "Run 'easyds model set --type vision ...' first."
+                )
+            vision_cfg = vision
+        else:
+            vision_cfg = next(
+                (c for c in configs if isinstance(c, dict) and c.get("id") == mid),
+                None,
+            )
+            if vision_cfg is None:
+                raise click.UsageError(f"model config {mid!r} not found in project")
+
+        task = tasks_mod.create_task(
+            app.backend, pid,
+            task_type="image-dataset-generation",
+            model_info=vision_cfg,
+            language=("zh-CN" if language.startswith(("中", "zh")) else "en"),
+        )
+        task_id = (task.get("data") or {}).get("id") if isinstance(task, dict) else None
+        if wait and task_id:
+            final = tasks_mod.wait_for(
+                app.backend, pid, task_id, timeout=timeout,
+            )
+            app.emit(
+                final,
+                human_label=f"Image dataset generation task {task_id} finished",
+            )
+            return
+        app.emit(
+            task,
+            human_label="Kicked off image-dataset-generation task",
+        )
+        return
 
     # ── multi-turn branch ──────────────────────────────────────────
     if rounds is not None:
@@ -1229,11 +1604,70 @@ def datasets_evaluate(
 @click.pass_obj
 @_handle_errors
 def datasets_confirm(app: AppCtx, dataset_id: str):
-    """Mark a dataset record as confirmed."""
+    """Mark a dataset record as confirmed (PATCH /datasets?id=)."""
     app.emit(
-        datasets_mod.update(app.backend, app.project_id(), dataset_id, confirmed=True),
+        datasets_mod.update_content(
+            app.backend, app.project_id(), dataset_id, confirmed=True,
+        ),
         human_label="Confirmed",
     )
+
+
+@datasets_grp.command("edit")
+@click.argument("dataset_id")
+@click.option("--question", "question", default=None, help="Replace the question text.")
+@click.option("--answer", "answer", default=None, help="Replace the answer text.")
+@click.option("--cot", "cot", default=None, help="Replace the chain-of-thought text.")
+@click.option("--score", "score", type=float, default=None,
+              help="Manual quality score (0–5). Used by --score-gte filters on export.")
+@click.option("--tag", "tag_values", multiple=True,
+              help="Tag (repeatable, server stores as an array). Pair with `--note`.")
+@click.option("--note", "note", default=None, help="Free-text reviewer note.")
+@click.option("--confirmed/--unconfirmed", "confirmed", default=None,
+              help="Mark as confirmed or unconfirmed.")
+@click.pass_obj
+@_handle_errors
+def datasets_edit(
+    app: AppCtx,
+    dataset_id: str,
+    question: str | None,
+    answer: str | None,
+    cot: str | None,
+    score: float | None,
+    tag_values: tuple[str, ...],
+    note: str | None,
+    confirmed: bool | None,
+):
+    """Edit a dataset row's text / score / tags / note in-place (案例 4 manual review).
+
+    Splits the call across two server endpoints automatically:
+
+    \b
+    * content fields (--question, --answer, --cot, --confirmed) → PATCH /datasets?id=
+    * review metadata (--score, --tag, --note)                  → PATCH /datasets/{id}
+
+    Both routes are PATCH-only on the server. Earlier versions sent everything
+    to one endpoint and the metadata-only fields were silently dropped.
+    """
+    pid = app.project_id()
+    results: dict[str, Any] = {}
+
+    if any(v is not None for v in (question, answer, cot, confirmed)):
+        results["content"] = datasets_mod.update_content(
+            app.backend, pid, dataset_id,
+            question=question, answer=answer, cot=cot, confirmed=confirmed,
+        )
+    metadata_set = score is not None or tag_values or note is not None
+    if metadata_set:
+        results["metadata"] = datasets_mod.update_metadata(
+            app.backend, pid, dataset_id,
+            score=score,
+            tags=list(tag_values) if tag_values else None,
+            note=note,
+        )
+    if not results:
+        raise click.UsageError("nothing to edit — pass at least one option")
+    app.emit(results, human_label=f"Dataset {dataset_id} updated")
 
 
 @datasets_grp.command("import")
@@ -2026,6 +2460,48 @@ def eval_variant(
         question_type=question_type, count=count, language=language,
     )
     app.emit(result, human_label=f"Generated {count} eval variant(s)")
+
+
+@eval_grp.command("generate")
+@click.option("--language", default="zh-CN", show_default=True)
+@click.option("--wait/--no-wait", default=False)
+@click.option("--timeout", type=float, default=3600.0, show_default=True)
+@click.pass_obj
+@_handle_errors
+def eval_generate(app: AppCtx, language: str, wait: bool, timeout: float):
+    """Batch-generate evaluation questions from every chunk that doesn't have one yet.
+
+    The server reads ``evalQuestionTypeRatios`` from task-config.json to decide
+    the per-type split (true_false / single_choice / multiple_choice / short_answer
+    / open_ended). Set the ratios first with::
+
+        easyds project settings set-eval-ratios --true-false 1 --single 1 --multi 1 --short 2 --open 1
+
+    Wraps POST /tasks {taskType:"eval-generation"}. Pair with --wait or
+    `easyds task wait <id>`.
+    """
+    pid = app.project_id()
+    mid = session_mod.resolve_model_config_id(None)
+    configs = model_mod.list_configs(app.backend, pid)
+    model_obj = next((c for c in configs if isinstance(c, dict) and c.get("id") == mid), None)
+    if not model_obj:
+        raise click.UsageError(
+            f"current model config {mid!r} not found. Run `easyds model use <id>` first."
+        )
+    result = tasks_mod.create_task(
+        app.backend, pid,
+        task_type="eval-generation",
+        model_info=model_obj,
+        language=language,
+    )
+    task = (result or {}).get("data") or {}
+    task_id = task.get("id")
+    payload = {"taskId": task_id, "task": task}
+    if wait and task_id:
+        payload["final"] = tasks_mod.wait_for(
+            app.backend, pid, task_id, timeout=timeout, poll_interval=2.0,
+        )
+    app.emit(payload, human_label=f"eval-generation task {task_id} kicked off")
 
 
 # ── eval-task group ───────────────────────────────────────────────────

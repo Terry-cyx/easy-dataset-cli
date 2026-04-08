@@ -1,0 +1,16 @@
+{
+  "id": "DNbt-KcQcOlSrFrOxJEQq",
+  "projectId": "BeiPACFdxdCb",
+  "taskType": "image-question-generation",
+  "status": 1,
+  "startTime": "2026-04-08T12:09:06.848Z",
+  "endTime": "2026-04-08T12:09:13.655Z",
+  "completedCount": 4,
+  "totalCount": 4,
+  "modelInfo": "{\"id\":\"lnmV7y7gL9Yu\",\"projectId\":\"BeiPACFdxdCb\",\"providerId\":\"openai\",\"providerName\":\"Paratera\",\"endpoint\":\"https://llmapi.paratera.com/v1/\",\"apiKey\":\"sk-sbwZdqOyMGyTxYc7A-Q4Dg\",\"modelId\":\"Kimi-K2.5\",\"modelName\":\"Kimi-K2.5\",\"type\":\"vision\",\"temperature\":0.4,\"maxTokens\":4096,\"topP\":0.9,\"topK\":0,\"status\":1,\"createAt\":\"2026-04-08T12:08:01.699Z\",\"updateAt\":\"2026-04-08T12:08:01.699Z\"}",
+  "language": "zh-CN",
+  "detail": "",
+  "note": "",
+  "createAt": "2026-04-08T12:09:06.848Z",
+  "updateAt": "2026-04-08T12:09:13.656Z"
+}

@@ -491,17 +491,77 @@ class TestDatasets:
         assert body == {"questionId": "q1", "model": SAMPLE_MODEL, "language": "en"}
 
     @responses.activate
-    def test_update_uses_put(self, backend):
+    def test_update_routes_to_two_endpoints(self, backend):
+        """Server splits dataset edits into TWO PATCH endpoints.
+
+        - PATCH /datasets/{id} accepts only score/tags/note
+        - PATCH /datasets?id={id} accepts only confirmed/answer/cot/question
+
+        Older code shoved everything into one route and silently lost half
+        the fields. The shim ``datasets.update`` now dispatches accordingly.
+        """
+        # Mixed call: one content field + one metadata field
         responses.add(
-            responses.PUT,
+            responses.PATCH,
+            f"{BASE}/api/projects/p1/datasets",
+            json={"success": True},
+            status=200,
+        )
+        responses.add(
+            responses.PATCH,
             f"{BASE}/api/projects/p1/datasets/d1",
-            json={"id": "d1", "confirmed": True},
+            json={"success": True, "dataset": {"id": "d1", "score": 5}},
             status=200,
         )
         datasets_mod.update(backend, "p1", "d1", confirmed=True, score=5)
-        assert responses.calls[0].request.method == "PUT"
+        assert len(responses.calls) == 2
+        assert responses.calls[0].request.method == "PATCH"
+        assert "datasets/d1" not in (responses.calls[0].request.url or "")
+        assert "id=d1" in (responses.calls[0].request.url or "")
+        c_body = json.loads(responses.calls[0].request.body)
+        assert c_body == {"confirmed": True}
+        m_body = json.loads(responses.calls[1].request.body)
+        assert m_body == {"score": 5}
+
+    @responses.activate
+    def test_update_metadata_review_only(self, backend):
+        """D: `datasets edit` writes score + tags (array!) + note via the
+        metadata endpoint. Reproduces the manual-review step from 案例 4."""
+        responses.add(
+            responses.PATCH,
+            f"{BASE}/api/projects/p1/datasets/d-review",
+            json={"success": True, "dataset": {"id": "d-review"}},
+            status=200,
+        )
+        datasets_mod.update_metadata(
+            backend, "p1", "d-review",
+            score=2.5,
+            tags=["needs-fix", "off-topic"],
+            note="answer drifts off-topic",
+        )
         body = json.loads(responses.calls[0].request.body)
-        assert body == {"confirmed": True, "score": 5}
+        assert body == {
+            "score": 2.5,
+            "tags": ["needs-fix", "off-topic"],
+            "note": "answer drifts off-topic",
+        }
+
+    @responses.activate
+    def test_update_content_uses_query_id(self, backend):
+        """update_content posts to PATCH /datasets?id={did} (parent route)."""
+        responses.add(
+            responses.PATCH,
+            f"{BASE}/api/projects/p1/datasets",
+            json={"success": True},
+            status=200,
+        )
+        datasets_mod.update_content(
+            backend, "p1", "d-content", confirmed=True, answer="new answer",
+        )
+        url = responses.calls[0].request.url or ""
+        assert "id=d-content" in url
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {"answer": "new answer", "confirmed": True}
 
 
 # ── core/export ───────────────────────────────────────────────────────
@@ -776,6 +836,41 @@ class TestProjectConfig:
         assert body["questionGenerationLength"] == 240
         assert body["concurrencyLimit"] == 5
         assert body["minerUToken"] == "PRESERVE-ME"
+
+    @responses.activate
+    def test_set_eval_question_type_ratios(self, backend):
+        """C: `project settings set-eval-ratios` writes the 5-key ratio dict.
+
+        The eval-generation task processor reads this from task-config.json
+        to decide how many true_false / single_choice / multiple_choice /
+        short_answer / open_ended questions to generate per chunk. Defaults
+        in the upstream service are 1:1:1:1:1.
+        """
+        responses.add(
+            responses.GET,
+            f"{BASE}/api/projects/p1/tasks",
+            json={"questionGenerationLength": 240, "concurrencyLimit": 5},
+            status=200,
+        )
+        responses.add(
+            responses.PUT,
+            f"{BASE}/api/projects/p1/tasks",
+            json={"message": "ok"},
+            status=200,
+        )
+        ratios = {
+            "true_false": 2,
+            "single_choice": 3,
+            "multiple_choice": 1,
+            "short_answer": 2,
+            "open_ended": 1,
+        }
+        project_mod.set_task_config(backend, "p1", evalQuestionTypeRatios=ratios)
+        body = json.loads(responses.calls[1].request.body)
+        assert body["evalQuestionTypeRatios"] == ratios
+        # Existing fields still preserved
+        assert body["questionGenerationLength"] == 240
+        assert body["concurrencyLimit"] == 5
 
 
 # ── core/chunks: custom split + task config orchestration ───────────
@@ -1432,10 +1527,11 @@ class TestExportConversations:
 
     @responses.activate
     def test_export_conversations_writes_file(self, backend, tmp_path):
+        # Server route is GET-only and returns a ShareGPT array directly.
         responses.add(
-            responses.POST,
+            responses.GET,
             f"{BASE}/api/projects/p1/dataset-conversations/export",
-            json={"data": [{"conversations": [{"from": "user", "value": "hi"}]}]},
+            json=[{"messages": [{"role": "user", "content": "hi"}, {"role": "assistant", "content": "hello"}]}],
             status=200,
         )
         out = tmp_path / "conv.json"
@@ -1445,8 +1541,24 @@ class TestExportConversations:
         assert os.path.exists(out)
         assert result["format"] == "sharegpt"
         assert result["kind"] == "multi-turn"
-        body = json.loads(responses.calls[0].request.body)
-        assert body["format"] == "sharegpt"
+        assert responses.calls[0].request.method == "GET"
+        # Default: no confirmed filter
+        assert "confirmed" not in (responses.calls[0].request.url or "")
+
+    @responses.activate
+    def test_export_conversations_confirmed_filter(self, backend, tmp_path):
+        responses.add(
+            responses.GET,
+            f"{BASE}/api/projects/p1/dataset-conversations/export",
+            json=[],
+            status=200,
+        )
+        out = tmp_path / "conv.json"
+        export_mod.export_conversations(
+            backend, "p1", output_path=str(out), fmt="sharegpt",
+            confirmed_only=True,
+        )
+        assert "confirmed=true" in responses.calls[0].request.url
 
     @responses.activate
     def test_export_conversations_rejects_alpaca(self, backend, tmp_path):
@@ -2697,8 +2809,84 @@ class TestTasks:
             "data-cleaning",
             "data-distillation",
             "model-evaluation",
+            "file-processing",
+            "eval-generation",
         ):
             assert t in tasks_mod.TASK_TYPES
+
+    @responses.activate
+    def test_create_task_data_cleaning_with_chunk_ids(self, backend):
+        """A1: batch cleaning posts a data-cleaning task with note.chunkIds."""
+        responses.add(
+            responses.POST,
+            f"{BASE}/api/projects/p1/tasks",
+            json={"code": 0, "data": {"id": "t-clean", "taskType": "data-cleaning", "status": 0}},
+            status=200,
+        )
+        result = tasks_mod.create_task(
+            backend, "p1",
+            task_type="data-cleaning",
+            model_info={"id": "m1", "providerId": "openai"},
+            note={"chunkIds": ["c1", "c2", "c3"]},
+            language="zh-CN",
+        )
+        assert result["data"]["id"] == "t-clean"
+        body = json.loads(responses.calls[0].request.body)
+        assert body["taskType"] == "data-cleaning"
+        assert body["modelInfo"] == {"id": "m1", "providerId": "openai"}
+        assert body["note"] == {"chunkIds": ["c1", "c2", "c3"]}
+        assert body["language"] == "zh-CN"
+
+    @responses.activate
+    def test_create_task_file_processing_with_strategy(self, backend):
+        """A4: PDF re-process posts a file-processing task with note.strategy."""
+        responses.add(
+            responses.POST,
+            f"{BASE}/api/projects/p1/tasks",
+            json={"code": 0, "data": {"id": "t-fp", "taskType": "file-processing"}},
+            status=200,
+        )
+        tasks_mod.create_task(
+            backend, "p1",
+            task_type="file-processing",
+            model_info={"id": "m1"},
+            note={
+                "projectId": "p1",
+                "fileList": [{"fileId": "f1", "fileName": "a.pdf"}],
+                "strategy": "mineru",
+                "domainTreeAction": "rebuild",
+            },
+        )
+        body = json.loads(responses.calls[0].request.body)
+        assert body["note"]["strategy"] == "mineru"
+        assert body["note"]["fileList"] == [{"fileId": "f1", "fileName": "a.pdf"}]
+
+    @responses.activate
+    def test_create_task_eval_generation_no_note(self, backend):
+        """C: eval-generation reads ratios from task-config; no note needed."""
+        responses.add(
+            responses.POST,
+            f"{BASE}/api/projects/p1/tasks",
+            json={"code": 0, "data": {"id": "t-eval", "taskType": "eval-generation"}},
+            status=200,
+        )
+        tasks_mod.create_task(
+            backend, "p1",
+            task_type="eval-generation",
+            model_info={"id": "m1"},
+        )
+        body = json.loads(responses.calls[0].request.body)
+        assert body["taskType"] == "eval-generation"
+        assert "note" not in body  # eval-generation reads from task-config.json
+
+    def test_create_task_rejects_unknown_type(self, backend):
+        """create_task validates the task_type whitelist client-side."""
+        with pytest.raises(ValueError, match="Unknown task_type"):
+            tasks_mod.create_task(
+                backend, "p1",
+                task_type="not-a-real-task",
+                model_info={},
+            )
 
 
 # ──────────────────────────────────────────────────────────────────────

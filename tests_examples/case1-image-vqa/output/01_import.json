@@ -1,0 +1,58 @@
+{
+  "success": true,
+  "count": 4,
+  "images": [
+    {
+      "id": "Soht61NznOd2hX7gSOgpO",
+      "projectId": "Y6O56uKh7Fxm",
+      "imageName": "blue_truck.png",
+      "path": "C:\\Users\\Administrator\\AppData\\Roaming\\easy-dataset\\local-db\\Y6O56uKh7Fxm/images/blue_truck.png",
+      "size": 1806,
+      "width": 256,
+      "height": 192,
+      "createAt": "2026-04-08T11:50:25.715Z",
+      "updateAt": "2026-04-08T11:50:25.715Z"
+    },
+    {
+      "id": "vm1x-3GRgFQdPVSlLYGbI",
+      "projectId": "Y6O56uKh7Fxm",
+      "imageName": "green_van.png",
+      "path": "C:\\Users\\Administrator\\AppData\\Roaming\\easy-dataset\\local-db\\Y6O56uKh7Fxm/images/green_van.png",
+      "size": 1901,
+      "width": 256,
+      "height": 192,
+      "createAt": "2026-04-08T11:50:25.723Z",
+      "updateAt": "2026-04-08T11:50:25.723Z"
+    },
+    {
+      "id": "WdO7U2NQgB1UWWYWzZc0j",
+      "projectId": "Y6O56uKh7Fxm",
+      "imageName": "red_sedan.png",
+      "path": "C:\\Users\\Administrator\\AppData\\Roaming\\easy-dataset\\local-db\\Y6O56uKh7Fxm/images/red_sedan.png",
+      "size": 1821,
+      "width": 256,
+      "height": 192,
+      "createAt": "2026-04-08T11:50:25.732Z",
+      "updateAt": "2026-04-08T11:50:25.732Z"
+    },
+    {
+      "id": "9QhEVGYLGU8s1x2YKNni8",
+      "projectId": "Y6O56uKh7Fxm",
+      "imageName": "yellow_taxi.png",
+      "path": "C:\\Users\\Administrator\\AppData\\Roaming\\easy-dataset\\local-db\\Y6O56uKh7Fxm/images/yellow_taxi.png",
+      "size": 2003,
+      "width": 256,
+      "height": 192,
+      "createAt": "2026-04-08T11:50:25.742Z",
+      "updateAt": "2026-04-08T11:50:25.742Z"
+    }
+  ],
+  "zipName": "vehicles.zip",
+  "imported_count": 4,
+  "imported_files": [
+    "blue_truck.png",
+    "green_van.png",
+    "red_sedan.png",
+    "yellow_taxi.png"
+  ]
+}

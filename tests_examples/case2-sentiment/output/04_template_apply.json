@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "template": {
+    "id": "aXoC4KAGRqG2O2XV874vI",
+    "projectId": "xtKa6zKzcDP7",
+    "question": "\u8bf7\u5224\u65ad\u8fd9\u6761\u8bc4\u8bba\u7684\u60c5\u611f\u503e\u5411",
+    "sourceType": "text",
+    "answerType": "label",
+    "description": "",
+    "labels": [
+      "\u6b63\u9762",
+      "\u8d1f\u9762",
+      "\u4e2d\u6027"
+    ],
+    "customFormat": null,
+    "order": 0,
+    "createAt": "2026-04-08T11:22:01.896Z",
+    "updateAt": "2026-04-08T11:22:01.896Z"
+  },
+  "generation": {
+    "success": true,
+    "successCount": 8,
+    "failCount": 0,
+    "errors": [],
+    "message": "\u6210\u529f\u4e3a 8 \u4e2a\u6570\u636e\u6e90\u521b\u5efa\u95ee\u9898\uff0c0 \u4e2a\u5931\u8d25"
+  }
+}

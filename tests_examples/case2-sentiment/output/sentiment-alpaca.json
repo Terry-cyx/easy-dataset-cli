@@ -1,0 +1,66 @@
+[
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": ""
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"中性\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": ""
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"正面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": ""
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": ""
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"中性\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": ""
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"中性\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": ""
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": ""
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"正面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": ""
+  }
+]

@@ -23,6 +23,7 @@ A stateful command-line interface that lets AI agents drive [Easy-Dataset](https
 | [`reference/08-task-settings.md`](reference/08-task-settings.md) | Set project-wide knobs (chunk size, concurrency, MGA defaults, eval ratios, MinerU token) |
 | [`reference/09-pdf-and-data-cleaning.md`](reference/09-pdf-and-data-cleaning.md) | Pick a PDF parser (MinerU / vision) or batch-clean noisy chunks before generating Q&A |
 | [`reference/10-question-templates.md`](reference/10-question-templates.md) | Build a **classification** dataset (labels) or **structured extraction** dataset (JSON schema) |
+| [`reference/11-dataset-eval.md`](reference/11-dataset-eval.md) | ★ **Feedback loop** — evaluate the final JSON, attribute failures to pipeline steps, apply local `--fix` repairs, track history. This is what `easyds` does that the GUI cannot. |
 
 ## Workflow recipes (`reference/workflows/`)
 

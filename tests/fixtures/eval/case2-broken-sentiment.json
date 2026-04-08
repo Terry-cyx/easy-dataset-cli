@@ -1,0 +1,66 @@
+[
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": "reviews-part-1"
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": "reviews-part-2"
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": "reviews-part-3"
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": "reviews-part-4"
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": "reviews-part-5"
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": "reviews-part-6"
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": "reviews-part-7"
+  },
+  {
+    "instruction": "请判断这条评论的情感倾向",
+    "input": "",
+    "output": "[\n  \"负面\"\n]",
+    "system": "",
+    "chunkContent": "",
+    "chunkName": "reviews-part-8"
+  }
+]

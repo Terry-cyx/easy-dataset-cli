@@ -24,9 +24,11 @@ from easyds import __version__
 from easyds.core import (
     blind_test as blind_mod,
     chunks as chunks_mod,
+    dataset_eval as dataset_eval_mod,
     datasets as datasets_mod,
     distill as distill_mod,
     eval as eval_mod,
+    eval_fixes as eval_fixes_mod,
     eval_tasks as eval_tasks_mod,
     export as export_mod,
     files as files_mod,
@@ -1735,6 +1737,181 @@ def datasets_optimize(
         advice=advice, model=model_obj, language=language,
     )
     app.emit(result, human_label=f"Optimized dataset {dataset_id}")
+
+
+@datasets_grp.command("eval")
+@click.argument("file", type=click.Path(exists=True, dir_okay=False))
+@click.option("--task-type",
+              type=click.Choice(list(dataset_eval_mod.VALID_TASK_TYPES)),
+              default="auto", show_default=True,
+              help="Override auto-detection of the task shape.")
+@click.option("--strict", is_flag=True,
+              help="Promote warning-level rules to hard failures.")
+@click.option("--llm-judge", is_flag=True,
+              help="Also run a small LLM judge (groundedness/correctness/clarity). "
+                   "Burns tokens; off by default.")
+@click.option("--sample", "judge_sample", type=int, default=20, show_default=True,
+              help="Max records to send to the judge (only with --llm-judge).")
+@click.option("--model-config", "model_config_id", default=None,
+              help="Judge model config id. Defaults to the session's current.")
+@click.option("--fix",
+              type=click.Choice(list(eval_fixes_mod.FIXES.keys())),
+              default=None,
+              help="Apply a post-processing fix IN-PLACE (never touches the server). "
+                   "Writes the corrected file back to FILE.")
+@click.option("--chunks-file", type=click.Path(exists=True, dir_okay=False),
+              default=None, help="Required for --fix chunk-join.")
+@click.option("--var", "fix_vars", multiple=True,
+              help="Required for --fix render-placeholders. Format: name=value. Repeatable.")
+@click.option("--no-history", is_flag=True,
+              help="Don't append this run to ~/.easyds/session.json eval history.")
+@click.pass_obj
+@_handle_errors
+def datasets_eval(
+    app: AppCtx,
+    file: str,
+    task_type: str,
+    strict: bool,
+    llm_judge: bool,
+    judge_sample: int,
+    model_config_id: str | None,
+    fix: str | None,
+    chunks_file: str | None,
+    fix_vars: tuple[str, ...],
+    no_history: bool,
+):
+    """Evaluate a final Alpaca/ShareGPT dataset file and attribute failures.
+
+    Core value-add of easyds: once you have a final dataset JSON, run
+    this to get a machine-readable report (use --json) that tells an
+    agent which pipeline step to re-run and what flag to change.
+
+    Also supports --fix for safe, local post-processing repairs.
+    """
+    # ── Post-processing --fix path (never calls server) ────────────
+    if fix is not None:
+        records, file_type = eval_fixes_mod.load_records(file)
+        if fix == "chunk-join":
+            if not chunks_file:
+                raise click.UsageError(
+                    "--fix chunk-join requires --chunks-file <chunks.json>. "
+                    "Get one via 'easyds --json chunks list > chunks.json'."
+                )
+            new_records, summary = eval_fixes_mod.fix_chunk_join(
+                records, chunks_file
+            )
+        elif fix == "unwrap-labels":
+            new_records, summary = eval_fixes_mod.fix_unwrap_labels(records)
+        elif fix == "render-placeholders":
+            variables: dict[str, str] = {}
+            for v in fix_vars:
+                if "=" not in v:
+                    raise click.UsageError(
+                        f"--var must be name=value, got {v!r}"
+                    )
+                k, val = v.split("=", 1)
+                variables[k] = val
+            if not variables:
+                raise click.UsageError(
+                    "--fix render-placeholders requires at least one "
+                    "--var name=value"
+                )
+            new_records, summary = eval_fixes_mod.fix_render_placeholders(
+                records, variables
+            )
+        else:  # pragma: no cover — Click choice guard
+            raise click.UsageError(f"unknown fix: {fix}")
+
+        eval_fixes_mod.write_records(file, new_records, file_type)
+        summary["file"] = file
+        app.emit(
+            summary,
+            human_label=f"Applied --fix {fix} to {file}",
+        )
+        return
+
+    # ── Evaluation path ────────────────────────────────────────────
+    judge_model_config: dict | None = None
+    if llm_judge:
+        try:
+            pid = app.project_id()
+            mid = session_mod.resolve_model_config_id(model_config_id)
+            configs = model_mod.list_configs(app.backend, pid)
+            judge_model_config = next(
+                (c for c in configs if isinstance(c, dict) and c.get("id") == mid),
+                None,
+            )
+            if judge_model_config is None:
+                raise click.UsageError(
+                    f"judge model config {mid!r} not found in project"
+                )
+        except (session_mod.NoProjectSelected,
+                session_mod.NoModelConfigSelected) as e:
+            # Surface as a judge error but don't kill the schema checks
+            judge_model_config = None
+            # The evaluate() runner will emit an appropriate errors entry.
+
+    report = dataset_eval_mod.evaluate(
+        file,
+        task_type=task_type,
+        strict=strict,
+        llm_judge=llm_judge,
+        judge_model_config=judge_model_config,
+        judge_sample_size=judge_sample,
+    )
+
+    # Persist to eval history (unless opted out or no project selected)
+    if not no_history:
+        import datetime as _dt
+        try:
+            session_mod.append_eval_history({
+                "file": report.file,
+                "file_sha256_prefix": report.file_sha256_prefix,
+                "verdict": report.verdict,
+                "failing_rules": [
+                    c.name for c in report.checks if c.verdict == "fail"
+                ],
+                "warn_rules": [
+                    c.name for c in report.checks if c.verdict == "warn"
+                ],
+                "task_type": report.task_type,
+                "sample_size": report.sample_size,
+                "at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+            })
+        except Exception:  # noqa: BLE001 — history is best-effort
+            pass
+
+    app.emit(
+        report.to_dict(),
+        human_label=(
+            f"dataset eval: {report.verdict.upper()} "
+            f"({report.sample_size} records, task_type={report.task_type})"
+        ),
+    )
+    # Non-zero exit code for CI gating (only when JSON mode is OFF — JSON
+    # callers inspect report.exit_code themselves)
+    if report.exit_code != 0 and not app.json_mode:
+        raise click.exceptions.Exit(report.exit_code)
+
+
+@datasets_grp.command("eval-history")
+@click.option("--project", "project_arg", default=None,
+              help="Project id (defaults to current session project).")
+@click.pass_obj
+@_handle_errors
+def datasets_eval_history(app: AppCtx, project_arg: str | None):
+    """Show recent datasets-eval runs for the current project.
+
+    Powered by ~/.easyds/session.json. Useful for agents retrying the
+    same file — they can see ("last time we failed on X") without having
+    to store their own history.
+    """
+    pid = project_arg or session_mod.load_session().get("current_project_id")
+    history = session_mod.get_eval_history(pid)
+    app.emit(
+        history,
+        human_label=f"{len(history)} eval run(s) for project {pid}",
+    )
 
 
 # ── export group ───────────────────────────────────────────────────────

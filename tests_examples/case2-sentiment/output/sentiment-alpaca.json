@@ -1,66 +1,42 @@
 [
   {
     "instruction": "请判断这条评论的情感倾向",
-    "input": "",
-    "output": "[\n  \"负面\"\n]",
-    "system": "",
-    "chunkContent": "",
-    "chunkName": ""
+    "input": "新款手机外观很酷，性能也强，但是续航太拉胯了，重度使用一天两充，真心不推荐。",
+    "output": "负面"
   },
   {
     "instruction": "请判断这条评论的情感倾向",
-    "input": "",
-    "output": "[\n  \"中性\"\n]",
-    "system": "",
-    "chunkContent": "",
-    "chunkName": ""
+    "input": "课程内容讲的还行，但老师口音重听不太懂，视频清晰度也一般，整体感觉一般般吧。\n---------",
+    "output": "中性"
   },
   {
     "instruction": "请判断这条评论的情感倾向",
-    "input": "",
-    "output": "[\n  \"正面\"\n]",
-    "system": "",
-    "chunkContent": "",
-    "chunkName": ""
+    "input": "快递小哥很负责，主动打电话沟通配送时间，包装也完好无损，给五星好评。\n---------",
+    "output": "正面"
   },
   {
     "instruction": "请判断这条评论的情感倾向",
-    "input": "",
-    "output": "[\n  \"负面\"\n]",
-    "system": "",
-    "chunkContent": "",
-    "chunkName": ""
+    "input": "酒店位置很方便，但隔音太差了，整夜都能听到隔壁电视声，根本没睡好，再也不会订这家了。\n---------",
+    "output": "负面"
   },
   {
     "instruction": "请判断这条评论的情感倾向",
-    "input": "",
-    "output": "[\n  \"中性\"\n]",
-    "system": "",
-    "chunkContent": "",
-    "chunkName": ""
+    "input": "这本书的排版和印刷都很精美，纸张手感也好，不过内容比想象中的浅，适合入门读者。\n---------",
+    "output": "中性"
   },
   {
     "instruction": "请判断这条评论的情感倾向",
-    "input": "",
-    "output": "[\n  \"中性\"\n]",
-    "system": "",
-    "chunkContent": "",
-    "chunkName": ""
+    "input": "新买的耳机音质还可以，但是佩戴不太舒服，戴久了耳朵疼，价格倒是合适。\n---------",
+    "output": "中性"
   },
   {
     "instruction": "请判断这条评论的情感倾向",
-    "input": "",
-    "output": "[\n  \"负面\"\n]",
-    "system": "",
-    "chunkContent": "",
-    "chunkName": ""
+    "input": "点了一份外卖，等了快两个小时才送到，到的时候菜都凉透了，包装还破了，差评。\n---------",
+    "output": "负面"
   },
   {
     "instruction": "请判断这条评论的情感倾向",
-    "input": "",
-    "output": "[\n  \"正面\"\n]",
-    "system": "",
-    "chunkContent": "",
-    "chunkName": ""
+    "input": "这家餐厅的红烧肉简直绝了，肥而不腻入口即化，服务员也很热情，下次还会再来。\n---------",
+    "output": "正面"
   }
 ]

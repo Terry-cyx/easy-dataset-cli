@@ -2599,6 +2599,157 @@ class TestFullPipelineImportCleanOptimize:
         )
 
 
+# ── 2d. Dataset-eval feedback loop (subprocess, offline) ──────────────
+
+
+class TestDatasetEvalFeedbackLoop:
+    """End-to-end subprocess exercise of the 'datasets eval' feedback loop.
+
+    Simulates the full agent narrative from spec §3.6:
+      1. Copy the known-broken case-2 fixture into tmp.
+      2. Run 'easyds datasets eval --json' — expect exit=2, fail verdict,
+         input_empty_rate=1.0, output_double_encoded=1.0 with attribution
+         pointing at 'export' + 'post-process'.
+      3. Apply '--fix chunk-join' using a chunks file, verify it writes.
+      4. Apply '--fix unwrap-labels'.
+      5. Re-run eval — expect exit=0 (or 1 if only warn-level remains).
+      6. Confirm eval-history now has entries for both runs.
+
+    No server required — the feedback loop is entirely local.
+    """
+
+    def _prep(self, tmp_path):
+        fixtures = Path(__file__).parent / "fixtures" / "eval"
+        broken = fixtures / "case2-broken-sentiment.json"
+        target = tmp_path / "sentiment-alpaca.json"
+        target.write_text(broken.read_text(encoding="utf-8"), encoding="utf-8")
+        # Matching chunks file
+        chunks = [
+            {"name": f"reviews-part-{i+1}", "content": f"test review {i+1}"}
+            for i in range(8)
+        ]
+        chunks_file = tmp_path / "chunks.json"
+        chunks_file.write_text(json.dumps(chunks, ensure_ascii=False))
+        return target, chunks_file
+
+    def test_full_loop_broken_to_fixed(self, tmp_path):
+        target, chunks_file = self._prep(tmp_path)
+        env = {
+            "HOME": str(tmp_path),
+            "USERPROFILE": str(tmp_path),
+        }
+
+        # 1. Initial eval — broken, exit=2
+        r = _run(
+            ["--json", "datasets", "eval", str(target)],
+            env_extra=env, check=False,
+        )
+        assert r.returncode in (0, 2), (
+            f"expected exit 0/2 in JSON mode, got {r.returncode}: {r.stderr}"
+        )
+        report = json.loads(r.stdout)
+        assert report["verdict"] == "fail"
+        assert report["task_type"] == "classification"
+        assert report["exit_code"] == 2
+
+        rules = {c["name"]: c for c in report["checks"]}
+        assert rules["input_empty_rate"]["verdict"] == "fail"
+        assert rules["input_empty_rate"]["value"] == 1.0
+        assert rules["output_double_encoded"]["verdict"] == "fail"
+
+        attr_rules = {a["rule"] for a in report["attribution"]}
+        assert "input_empty_rate" in attr_rules
+        assert "output_double_encoded" in attr_rules
+
+        # 2. Apply --fix chunk-join (writes file in place, no server)
+        r = _run([
+            "--json", "datasets", "eval", str(target),
+            "--fix", "chunk-join",
+            "--chunks-file", str(chunks_file),
+        ], env_extra=env, check=False)
+        assert r.returncode == 0, r.stderr
+        fix_summary = json.loads(r.stdout)
+        assert fix_summary["fix"] == "chunk-join"
+        assert fix_summary["updated"] == 8
+
+        # Verify the file actually got rewritten
+        rewritten = json.loads(target.read_text(encoding="utf-8"))
+        assert all(r["input"] != "" for r in rewritten)
+        assert rewritten[0]["input"] == "test review 1"
+
+        # 3. Apply --fix unwrap-labels to collapse the '["正面"]' encoding
+        r = _run([
+            "--json", "datasets", "eval", str(target),
+            "--fix", "unwrap-labels",
+        ], env_extra=env, check=False)
+        assert r.returncode == 0, r.stderr
+        rewritten = json.loads(target.read_text(encoding="utf-8"))
+        assert all(not r["output"].startswith("[") for r in rewritten)
+
+        # 4. Re-run eval — both hard failures should be gone
+        r = _run(
+            ["--json", "datasets", "eval", str(target)],
+            env_extra=env, check=False,
+        )
+        report2 = json.loads(r.stdout)
+        hard_fails = [c for c in report2["checks"] if c["verdict"] == "fail"]
+        assert hard_fails == [], (
+            f"still failing after fixes: {hard_fails}"
+        )
+        assert report2["verdict"] in ("pass", "warn")
+
+    def test_eval_history_persists_across_runs(self, tmp_path):
+        target, _ = self._prep(tmp_path)
+        # Seed a session with a project so history keys by project id
+        session_dir = tmp_path / ".easyds"
+        session_dir.mkdir()
+        (session_dir / "session.json").write_text(
+            json.dumps({"current_project_id": "proj-x"})
+        )
+        env = {
+            "HOME": str(tmp_path),
+            "USERPROFILE": str(tmp_path),
+        }
+        for _ in range(3):
+            r = _run(
+                ["--json", "datasets", "eval", str(target)],
+                env_extra=env, check=False,
+            )
+            assert r.returncode in (0, 2)
+
+        r = _run(
+            ["--json", "datasets", "eval-history"],
+            env_extra=env, check=False,
+        )
+        assert r.returncode == 0, r.stderr
+        hist = json.loads(r.stdout)
+        assert isinstance(hist, list)
+        assert len(hist) == 3
+        for entry in hist:
+            assert entry["verdict"] == "fail"
+            assert "input_empty_rate" in entry["failing_rules"]
+
+    def test_no_history_flag_opts_out(self, tmp_path):
+        target, _ = self._prep(tmp_path)
+        session_dir = tmp_path / ".easyds"
+        session_dir.mkdir()
+        (session_dir / "session.json").write_text(
+            json.dumps({"current_project_id": "proj-noh"})
+        )
+        env = {"HOME": str(tmp_path), "USERPROFILE": str(tmp_path)}
+
+        _run(
+            ["--json", "datasets", "eval", str(target), "--no-history"],
+            env_extra=env, check=False,
+        )
+        r = _run(
+            ["--json", "datasets", "eval-history"],
+            env_extra=env, check=False,
+        )
+        hist = json.loads(r.stdout)
+        assert hist == []
+
+
 # ── 3. Live backend (gated) ───────────────────────────────────────────
 
 

@@ -129,6 +129,39 @@ def set_current_model_config(model_config_id: str) -> None:
     save_session(s)
 
 
+# ── Eval history ─────────────────────────────────────────────────────
+# The datasets-eval feedback loop keeps a tiny rolling log of eval runs
+# so an agent retrying the same file can see ("last time we failed on X")
+# without having to shell out to a separate store. Scoped per-project.
+
+EVAL_HISTORY_MAX = 20
+
+
+def append_eval_history(entry: dict[str, Any]) -> None:
+    """Record one eval run in the session file (per current project).
+
+    Entry is a free-form dict; callers typically include file,
+    file_sha256_prefix, verdict, failing rule names, and a timestamp.
+    The list is trimmed to the last ``EVAL_HISTORY_MAX`` records.
+    """
+    s = load_session()
+    history = s.setdefault("eval_history", {})
+    pid = s.get("current_project_id", "_no_project_")
+    per_proj = history.setdefault(pid, [])
+    per_proj.append(entry)
+    del per_proj[:-EVAL_HISTORY_MAX]
+    save_session(s)
+
+
+def get_eval_history(project_id: str | None = None) -> list[dict[str, Any]]:
+    """Return the eval-history log for a project (default: current)."""
+    s = load_session()
+    history = s.get("eval_history", {})
+    if project_id is None:
+        project_id = s.get("current_project_id", "_no_project_")
+    return list(history.get(project_id, []))
+
+
 def set_base_url(base_url: str) -> None:
     s = load_session()
     s["base_url"] = base_url.rstrip("/")

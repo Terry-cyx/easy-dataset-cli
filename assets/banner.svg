@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360">
+  <title>easyds — drive Easy-Dataset from your terminal</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0"    stop-color="#04121a"/>
+      <stop offset="0.55" stop-color="#062a2e"/>
+      <stop offset="1"    stop-color="#0a2e1f"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+    <linearGradient id="pipe" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#34d399" stop-opacity="0.9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#67e8f9"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="360" fill="url(#bg)"/>
+
+  <!-- subtle grid -->
+  <g stroke="#0f3540" stroke-width="1">
+    <path d="M0 60 H1200 M0 120 H1200 M0 180 H1200 M0 240 H1200 M0 300 H1200"/>
+    <path d="M120 0 V360 M240 0 V360 M360 0 V360 M480 0 V360 M600 0 V360 M720 0 V360 M840 0 V360 M960 0 V360 M1080 0 V360"/>
+  </g>
+
+  <!-- left glow -->
+  <circle cx="220" cy="180" r="220" fill="url(#glow)"/>
+
+  <!-- pipeline motif: 6 stacked stages -->
+  <g transform="translate(60 60)" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="13" font-weight="600">
+    <g>
+      <rect x="0"   y="0"   width="320" height="34" rx="17" fill="#0a3340" stroke="#22d3ee" stroke-opacity="0.6"/>
+      <text x="20"  y="22" fill="#67e8f9">① upload</text>
+      <text x="305" y="22" text-anchor="end" fill="#94a3b8" font-weight="400">.md · .pdf · .docx · .epub</text>
+    </g>
+    <g transform="translate(0 44)">
+      <rect width="320" height="34" rx="17" fill="#0a3340" stroke="#22d3ee" stroke-opacity="0.6"/>
+      <text x="20"  y="22" fill="#67e8f9">② chunk</text>
+      <text x="305" y="22" text-anchor="end" fill="#94a3b8" font-weight="400">+ LLM domain tree</text>
+    </g>
+    <g transform="translate(0 88)">
+      <rect width="320" height="34" rx="17" fill="#0a3340" stroke="#22d3ee" stroke-opacity="0.6"/>
+      <text x="20"  y="22" fill="#67e8f9">③ ga pairs</text>
+      <text x="305" y="22" text-anchor="end" fill="#94a3b8" font-weight="400">genre × audience diversification</text>
+    </g>
+    <g transform="translate(0 132)">
+      <rect width="320" height="34" rx="17" fill="#103a36" stroke="#34d399" stroke-opacity="0.6"/>
+      <text x="20"  y="22" fill="#86efac">④ questions</text>
+      <text x="305" y="22" text-anchor="end" fill="#94a3b8" font-weight="400">templates · custom prompts</text>
+    </g>
+    <g transform="translate(0 176)">
+      <rect width="320" height="34" rx="17" fill="#103a36" stroke="#34d399" stroke-opacity="0.6"/>
+      <text x="20"  y="22" fill="#86efac">⑤ answers + cot</text>
+      <text x="305" y="22" text-anchor="end" fill="#94a3b8" font-weight="400">multi-dim eval</text>
+    </g>
+    <g transform="translate(0 220)">
+      <rect width="320" height="34" rx="17" fill="#103a36" stroke="#34d399" stroke-opacity="0.6"/>
+      <text x="20"  y="22" fill="#86efac">⑥ export</text>
+      <text x="305" y="22" text-anchor="end" fill="#94a3b8" font-weight="400">alpaca · sharegpt · cot</text>
+    </g>
+
+    <!-- vertical flow arrow -->
+    <path d="M340 17 L340 237" stroke="url(#pipe)" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- wordmark -->
+  <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+    <text x="430" y="160" font-size="116" font-weight="800" fill="url(#brand)" letter-spacing="-2">easyds</text>
+    <text x="430" y="208" font-size="24" font-weight="600" fill="#e2e8f0">Drive Easy-Dataset from your terminal — or your agent.</text>
+    <text x="430" y="240" font-size="17" font-weight="400" fill="#94a3b8">One CLI. ~80 commands. JSON mode. REPL. 246 tests green.</text>
+    <text x="430" y="266" font-size="17" font-weight="400" fill="#94a3b8">Upload → chunk → questions → answers → export. Reproducibly.</text>
+
+    <!-- chiplets — output formats &amp; features -->
+    <g font-size="13" font-weight="600">
+      <rect x="430" y="288" width="78"  height="26" rx="13" fill="#0b1f24" stroke="#22d3ee" stroke-opacity="0.6"/>
+      <text x="469" y="306" text-anchor="middle" fill="#67e8f9">Alpaca</text>
+      <rect x="516" y="288" width="86"  height="26" rx="13" fill="#0b1f24" stroke="#22d3ee" stroke-opacity="0.6"/>
+      <text x="559" y="306" text-anchor="middle" fill="#67e8f9">ShareGPT</text>
+      <rect x="610" y="288" width="74"  height="26" rx="13" fill="#0b1f24" stroke="#34d399" stroke-opacity="0.6"/>
+      <text x="647" y="306" text-anchor="middle" fill="#86efac">+ CoT</text>
+      <rect x="692" y="288" width="92"  height="26" rx="13" fill="#0b1f24" stroke="#34d399" stroke-opacity="0.6"/>
+      <text x="738" y="306" text-anchor="middle" fill="#86efac">multi-turn</text>
+      <rect x="792" y="288" width="84"  height="26" rx="13" fill="#0b1f24" stroke="#34d399" stroke-opacity="0.6"/>
+      <text x="834" y="306" text-anchor="middle" fill="#86efac">GA pairs</text>
+      <rect x="884" y="288" width="106" height="26" rx="13" fill="#0b1f24" stroke="#fbbf24" stroke-opacity="0.6"/>
+      <text x="937" y="306" text-anchor="middle" fill="#fcd34d">agent-native</text>
+    </g>
+  </g>
+</svg>

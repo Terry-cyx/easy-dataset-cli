@@ -4,86 +4,93 @@
 
 <br>
 
-**Drive [Easy-Dataset](https://github.com/ConardLi/easy-dataset) from your terminal — or your agent.**
+<img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white">
+<img alt="CLI" src="https://img.shields.io/badge/CLI-Click_8-blue">
+<img alt="Transport" src="https://img.shields.io/badge/transport-HTTP%2FJSON-orange">
+<img alt="Tests" src="https://img.shields.io/badge/tests-287_passed-22c55e">
+<img alt="Version" src="https://img.shields.io/badge/version-v1.0.1-f97316">
+<img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0-green.svg">
 
-*Easy-Dataset's GUI is great for humans clicking through a dataset build.*
-*But CI pipelines and LLM agents need a CLI — so here it is.*
+**A CLI & agent harness for [Easy-Dataset](https://github.com/ConardLi/easy-dataset) — drive the full fine-tuning dataset pipeline from your terminal.**
 
-<p align="center">
-  <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-3_min-22d3ee?style=for-the-badge" alt="Quick Start"></a>
-  <a href="#%EF%B8%8F-commands"><img src="https://img.shields.io/badge/Commands-~80_across_17_groups-34d399?style=for-the-badge" alt="Command coverage"></a>
-  <a href="easyds/skills/SKILL.md"><img src="https://img.shields.io/badge/Agent_Skill-included-8b5cf6?style=for-the-badge" alt="Agent skill"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL_3.0-eab308?style=for-the-badge" alt="License"></a>
-</p>
+[简体中文](./README.zh-CN.md) | **English** | [Türkçe](./README.tr.md)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/CLI-Click_8-blue" alt="Click">
-  <img src="https://img.shields.io/badge/transport-HTTP%2FJSON-orange" alt="HTTP/JSON">
-  <img src="https://img.shields.io/badge/tests-246_passed-22c55e" alt="Tests">
-  <img src="https://img.shields.io/badge/status-v1.0.1-f97316" alt="Version">
-</p>
+[Features](#features) • [Quick Start](#local-run) • [Documentation](easyds/skills/SKILL.md) • [Contributing](#contributing) • [License](#license)
 
-[Why easyds](#-why-easyds) · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [Commands](#%EF%B8%8F-commands) · [Agent Skill](easyds/skills/SKILL.md) · [Server quirks](docs/SERVER_QUIRKS.md)
+If you like this project, please give it a Star ⭐️!
 
 </div>
 
----
+## Overview
 
-## 📰 News
-
-- **2026-04-08** 🎬 **easy-dataset-cli v1.0.1** — first public release. 17 command groups, ~80 subcommands, 246 unit + integration tests, validated by two real end-to-end production runs against Kimi-K2.5.
-- **2026-04-08** 🧠 **Agent skill shipped** — `easyds/skills/SKILL.md` plus 16 reference docs and 9 scenario workflows under `easyds/skills/reference/`, so an LLM can drive the full pipeline without crawling the source.
-
----
-
-## 🤔 Why easyds?
-
-Easy-Dataset is the cleanest open-source pipeline for turning documents into LLM SFT corpora — chunking, domain trees, GA-pair diversification, question/answer generation, multi-dim eval, Alpaca/ShareGPT export. But the only first-class interface is a Next.js GUI. That makes it hard to drive from CI, hard to call from an AI agent, and hard to script.
-
-Today's choices for "automate Easy-Dataset" are awful:
-
-- **Click through the GUI** — fine for one project, miserable for ten.
-- **Hand-roll `curl` calls** against the Next.js routes — every team rebuilds the same upload / chunk / question / answer / export loop, and silently steps on the same server quirks.
-- **Re-implement the pipeline** — throws away the prompt engineering, the GA expansion, the evaluator, and the multi-format exporter that already work.
-
-`easyds` is the missing layer:
-
-- **One CLI**, ~80 commands across 17 groups, covering **every documented Easy-Dataset capability** — files, chunks, tags, GA pairs, questions, datasets, eval, blind test, distillation, custom prompts, and export.
-- **`--json` mode** on every command, with a stable exit-code protocol so agents can react to failures.
-- **A polished REPL** with persistent history, branded prompt, and tab completion — `easyds` with no subcommand drops you in.
-- **An agent skill index** so an LLM picks up the operating rules (`always --ga`, `model use writes server`, `ReadTimeout ≠ failure`, …) without prior context.
-- **246 tests green** — unit, mocked HTTP, stub-server, and installed-subprocess — and **two real production runs** against Kimi-K2.5 already shipped to disk.
-
-> Like a container CLI standardized how you talk to a container runtime, **easyds** standardizes how you (and your agents) talk to Easy-Dataset.
-
----
-
-## 🏛 Architecture
+**easy-dataset-cli** (`easyds`) is a stateful command-line harness that lets humans and AI agents drive every feature of [Easy-Dataset](https://github.com/ConardLi/easy-dataset) — the open-source pipeline for turning documents into LLM fine-tuning corpora — without ever touching the GUI. It speaks plain HTTP/JSON to a running Easy-Dataset Next.js server, so the upstream prompt library, chunkers, domain-tree builder, GA expander, evaluator, and exporters all keep working exactly as designed. On top of that foundation `easyds` layers a single polished CLI with 17 command groups, ~80 subcommands, a stable `--json` mode with exit-code protocol, an interactive REPL, and an embedded agent skill index — so CI pipelines, automation scripts, and LLM agents finally have a first-class interface. It is the missing layer between Easy-Dataset's powerful server and the automated workflows that want to use it.
 
 <div align="center">
-  <img src="assets/architecture.svg" alt="easyds architecture: Click CLI talks HTTP/JSON to a running Easy-Dataset Next.js server, which owns chunks, questions, datasets, eval, and export, persisted in SQLite via Prisma" width="900">
+  <img src="assets/architecture.svg" alt="easyds architecture: Click CLI talks HTTP/JSON to a running Easy-Dataset Next.js server, which owns chunks, questions, datasets, eval, and export, persisted in SQLite via Prisma" width="860">
 </div>
 
-`easyds` is a **thin HTTP client**, not a re-implementation. The Easy-Dataset Next.js server owns all the state, the prompt library, and the LLM calls. `easyds` is the remote control:
+## News
 
-| Layer | What lives there |
-|---|---|
-| **`easyds` CLI** | Click app, REPL, `--json` mode, session state in `~/.easyds/`, exit-code protocol |
-| **HTTP / JSON** | Plain `requests` client, default base URL `http://localhost:1717`, override via `--base-url` or `EDS_BASE_URL` |
-| **Easy-Dataset server** | Next.js routes under `/api/projects/{id}/…`, Prisma ORM, background-task runner, prompt library |
-| **Storage** | `prisma/db.sqlite` — projects, chunks, questions, datasets, tags, GA pairs, eval results |
-| **LLM providers** | Configured *per project* via `easyds model set` (OpenAI, Ollama, Zhipu, Kimi, OpenRouter, Bailian, MiniMax) |
+🎉🎉 **easy-dataset-cli v1.0.1 — the dataset-eval feedback loop is here!** Beyond wrapping every Easy-Dataset capability, `easyds` now ships a unique closed-loop feature that the GUI cannot match: `datasets eval` runs deterministic schema checks on any final Alpaca/ShareGPT file, attributes failures to the pipeline step that owns the fix, applies safe local repairs via `--fix {chunk-join,unwrap-labels,render-placeholders}`, and optionally calls an LLM judge for groundedness/correctness/clarity scoring — all without touching the server. An LLM agent can now *evaluate its own dataset, decide which step to re-run, and repair rows locally* in a single tight loop. See [`easyds/skills/reference/11-dataset-eval.md`](easyds/skills/reference/11-dataset-eval.md) for the full story.
 
-For the full pipeline, custom-prompt rules, and the hard-won server quirks the CLI works around, see [`docs/SERVER_QUIRKS.md`](docs/SERVER_QUIRKS.md) and [`easyds/skills/SKILL.md`](easyds/skills/SKILL.md).
+## Features
 
----
+### 🤖 Built for AI Agents
 
-## 🚀 Quick Start
+- **`--json` on every command** with a stable exit-code protocol (`0` ok, `2` server error, `3` validation, `4` not found, …) so agents can react to failures without parsing prose
+- **Embedded agent skill index** at [`easyds/skills/SKILL.md`](easyds/skills/SKILL.md) plus 16 reference docs and 11 scenario workflows — an LLM picks up the operating rules with zero prior context
+- **Operating rules distilled from real production runs** — `always --ga`, `model use` writes server, client `ReadTimeout` ≠ failure, custom prompts must produce strict JSON
+- **Stable session state** under `~/.easyds/session.json` so agents don't need to re-thread `--project` through every call
 
-### 1. Start an Easy-Dataset server (one-time, hard prerequisite)
+### 🔌 Full Easy-Dataset Coverage
 
-`easyds` does not reimplement chunking, domain-tree generation, or LLM calls. It forwards everything to a real Easy-Dataset server.
+- **17 command groups mapping 1:1 to the Easy-Dataset API** — projects, models, prompts, files, chunks, tags, GA pairs, questions, datasets, tasks, distill, eval, eval-task, blind, export, status, repl
+- **Every documented capability wrapped** — chunking strategies (text/document/separator/code), custom prompts, GA expansion, multi-dim evaluation, blind A/B testing, zero-shot distillation, multi-turn datasets, image VQA
+- **Per-project LLM configuration** supporting OpenAI, Ollama, Zhipu, Kimi, OpenRouter, Alibaba Bailian, MiniMax, and any OpenAI-compatible endpoint
+- **13 known server quirks already worked around** — no more learning them one production run at a time (see [`docs/SERVER_QUIRKS.md`](docs/SERVER_QUIRKS.md))
+
+### 📊 Dataset Evaluation & Feedback Loop (unique to easyds)
+
+- **Deterministic schema checks** — 9 rules covering empty fields, double-encoded outputs, placeholder leaks, malformed multi-turn records, duplicates, and length outliers
+- **Failure attribution** — every failing rule is cross-referenced to the pipeline step and command that owns the fix
+- **Safe local repairs** — `--fix chunk-join`, `--fix unwrap-labels`, `--fix render-placeholders` repair common failure modes in-place without re-running the server
+- **Optional LLM judge** — `--llm-judge` samples records and scores them on groundedness / correctness / clarity directly against any OpenAI-compatible endpoint
+- **Session-scoped eval history** — `datasets eval-history` lets an agent detect retry loops and track refinement progress over time
+
+### 📤 Export & Integration
+
+- **Three export formats** — Alpaca, ShareGPT, multilingual-thinking — with `--include-cot`, `--score-gte`, and deterministic `--split train/valid/test`
+- **Background-task orchestration** — `easyds task wait` polls long-running server jobs to completion with a timeout, so agents don't have to hand-roll polling logic
+- **Per-tag balanced sampling** on export, matching Easy-Dataset's GUI semantics
+
+### 🛠️ Developer Experience
+
+- **287 tests green** — unit, mocked HTTP, stub-server, and installed-subprocess — plus two real end-to-end production runs against Kimi-K2.5 already shipped to disk
+- **Editable install + uv-locked dependencies** for reproducible development
+- **Single clean Python package** (PEP 621 + uv) with `easyds` as the only installed entry point
+
+### 🌐 Human-Friendly Too
+
+- **Interactive REPL** with persistent history, branded prompt, and tab completion — `easyds` with no subcommand drops you in
+- **Rich human output** by default; switch to `--json` only when you want a parser
+- **Multi-language documentation** — 简体中文 / English / Türkçe — including this README
+
+## Quick Demo
+
+> **Recording in progress.** A short terminal capture of the canonical 7-step pipeline against a real Easy-Dataset server will land here. Contributions welcome via [`vhs`](https://github.com/charmbracelet/vhs) or [`asciinema`](https://asciinema.org/) — open a PR against `assets/demo.gif`.
+
+In the meantime, two real end-to-end runs are shipped as reproducible recipes:
+
+- **Kimi-K2.5 + Chinese spec doc** — full Alpaca export, 200+ Q&A pairs
+- **Kimi-K2.5 + ANSYS CFX tutorials** — custom prompt pipeline, English Q&A, ShareGPT export
+
+See [`easyds/skills/reference/workflows/custom-prompt-pipeline.md`](easyds/skills/reference/workflows/custom-prompt-pipeline.md) for the production-grade recipe distilled from the CFX run.
+
+## Local Run
+
+### Prerequisite: start an Easy-Dataset server
+
+`easyds` is a thin HTTP client — it does not reimplement chunking, domain-tree generation, or LLM calls. It forwards everything to a real Easy-Dataset server, which must be reachable before any command runs.
 
 ```bash
 git clone https://github.com/ConardLi/easy-dataset
@@ -92,15 +99,15 @@ pnpm install        # first time only
 pnpm dev            # serves http://localhost:1717
 ```
 
-> Easy-Dataset has **no built-in authentication**. Run it on localhost or behind your own auth proxy.
+> Easy-Dataset has **no built-in authentication** — run it on localhost or behind your own auth proxy.
 
-### 2. Install `easyds`
+### Install easyds
 
 ```bash
 # With uv (recommended — fastest, isolated tool install):
 uv tool install easy-dataset-cli
 
-# Or with uv into the current environment:
+# Or into the current environment with uv:
 uv pip install easy-dataset-cli
 
 # Or with plain pip:
@@ -109,7 +116,7 @@ pip install easy-dataset-cli
 
 Requires **Python 3.10+**. The PyPI distribution is `easy-dataset-cli`; the installed binary is **`easyds`**.
 
-### 3. Run the canonical 7-step pipeline
+### Run the canonical 7-step pipeline
 
 ```bash
 # 0. Verify the server is reachable.
@@ -118,8 +125,8 @@ easyds --json status
 # 1. Create a project.
 easyds --json project new --name my_dataset
 
-# 2. Register an LLM model and activate it (writes both local session
-#    and the server-side defaultModelConfigId — required for GA / image VQA).
+# 2. Register an LLM model and activate it (writes both local session and
+#    server-side defaultModelConfigId — required for GA / image VQA).
 easyds --json model set \
     --provider-id openai \
     --endpoint   https://api.openai.com/v1 \
@@ -127,7 +134,7 @@ easyds --json model set \
     --model-id   gpt-4o-mini
 easyds --json model use <id-from-step-2>
 
-# 3. Upload a document (.md or .pdf only).
+# 3. Upload a document (.md or .pdf).
 easyds --json files upload ./spec.md
 
 # 4. Chunk it (also builds a domain tree via the LLM).
@@ -144,181 +151,61 @@ easyds --json export run \
     -o ./alpaca.json \
     --format alpaca \
     --all --overwrite
+
+# 8. (Unique to easyds) Evaluate and auto-repair the final file.
+easyds --json datasets eval ./alpaca.json
 ```
 
-That's the full loop: **status → project → model → upload → chunk → questions → answers → export** — reproducible, scriptable, agent-driveable.
+That's the full loop: **status → project → model → upload → chunk → questions → answers → export → evaluate** — reproducible, scriptable, agent-driveable.
 
----
+## Documentation
 
-## 🎬 Demo
+- **[`easyds/skills/SKILL.md`](easyds/skills/SKILL.md)** — slim agent skill index, read by LLMs automatically
+- **[`easyds/skills/reference/`](easyds/skills/reference/)** — 16 reference docs including the canonical pipeline, custom-prompt rules, operating rules, agent protocol, task settings, PDF/data cleaning, question templates, and the dataset-eval feedback loop
+- **[`easyds/skills/reference/workflows/`](easyds/skills/reference/workflows/)** — 11 scenario recipes (custom-prompt pipeline, sentiment classification, document cleansing, image VQA, multi-turn distillation, GA/MGA pairs, eval & blind test, domain-tree editing, import/clean/optimize, background tasks, quality control)
+- **[`docs/SERVER_QUIRKS.md`](docs/SERVER_QUIRKS.md)** — 13 known Easy-Dataset server quirks the CLI already works around
+- **Upstream Easy-Dataset documentation**: [https://docs.easy-dataset.com/](https://docs.easy-dataset.com/)
 
-> **Recording in progress.** A short terminal capture of the canonical 7-step pipeline against a real Easy-Dataset server will land here. Want to contribute the recording? Use [`vhs`](https://github.com/charmbracelet/vhs) or [`asciinema`](https://asciinema.org/) and open a PR against `assets/demo.gif`.
+## Community Practice
 
-In the meantime, two real end-to-end runs are documented in production form:
+- **Custom-prompt pipeline against Kimi-K2.5** — end-to-end English Q&A from the ANSYS CFX tutorials, with custom question + evaluation prompts
+- **Sentiment classification dataset** — separator chunking + label template + `--fix chunk-join` repair, validated by the `datasets eval` feedback loop
+- **Document cleansing retake** — long noisy PDF → batch cleansing → scored Q&A → score-filtered export
+- **Image VQA dataset from a directory of slides** — vision-model answer generation
 
-- **Kimi-K2.5 + Chinese spec doc** — full Alpaca export, 200+ Q&A pairs
-- **Kimi-K2.5 + ANSYS CFX tutorials** — custom prompt pipeline, English Q&A, ShareGPT export
+All of the above are encoded as runnable scenario recipes under [`easyds/skills/reference/workflows/`](easyds/skills/reference/workflows/).
 
-Reach out via Issues if you'd like the run logs as a reference.
+## Contributing
 
----
+Contributions are very welcome! To contribute to `easy-dataset-cli`:
 
-## ✨ Features
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature/amazing-feature`)
+3. Set up the dev environment:
+   ```bash
+   uv sync --extra test
+   uv run easyds --version
+   uv run pytest                       # → 287 passed
+   ```
+4. Make your changes and add tests under `tests/`
+5. Commit your changes (`git commit -m 'Add some amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request against the `main` branch
 
-### 🧠 Built for agents
-- **`--json` on every command** with a stable exit-code protocol (`0` ok, `2` server error, `3` validation, `4` not found, …)
-- **Agent skill index** at [`easyds/skills/SKILL.md`](easyds/skills/SKILL.md) + 16 reference docs + 9 scenario workflows
-- **Operating rules** distilled from real production runs — `always --ga`, `model use` writes server, client `ReadTimeout` ≠ failure, custom prompts must produce strict JSON
-- **Stable session state** under `~/.easyds/session.json` so agents don't re-thread `--project` through every call
+Please make sure `pytest` stays green and follow the existing coding style (Click for CLI, thin `requests`-based backend, one `core/` module per Easy-Dataset domain).
 
-### 🔌 Full Easy-Dataset coverage
-- **17 command groups** mapping 1:1 to Easy-Dataset's API surface — projects, models, prompts, files, chunks, tags, GA pairs, questions, datasets, tasks, distill, eval, eval-task, blind, export, status, repl
-- **Every documented feature** wrapped — chunking strategies, custom prompts, GA expansion, multi-dim evaluation, blind A/B testing, zero-shot distillation, multi-turn datasets, image VQA
-- **Three export formats** — Alpaca, ShareGPT, multilingual-thinking — with `--include-cot`, `--score-gte`, and deterministic train/valid/test splits
+## License
 
-### 🖥 Polished for humans too
-- **Interactive REPL** with persistent history, branded prompt, and tab completion — `easyds` with no subcommand drops you in
-- **Rich human output** by default; switch to `--json` only when you want a parser
-- **Real test suite** — 246 unit + integration tests (mocked, stub-server, and installed-subprocess), 1 skipped, 0 failed
+This project is licensed under the **AGPL-3.0-or-later** license — see the [LICENSE](LICENSE) file for details. Same license as upstream Easy-Dataset.
 
----
+## Related Projects
 
-## ⚙️ Commands
+- **[Easy-Dataset](https://github.com/ConardLi/easy-dataset)** — the upstream Next.js + Prisma server `easyds` drives. Required runtime dependency.
 
-`easyds` ships **17 command groups** covering **~80 subcommands**. The full surface:
+## Star History
 
-| Group | Purpose | Server analogue |
-|---|---|---|
-| `status` | Server reachability + active session | `GET /api/projects` (cheapest probe) |
-| `project` | Project lifecycle (new/list/use/info/delete) | `/api/projects` |
-| `model` | Per-project LLM config (text or vision) | `/api/projects/{id}/model-config` |
-| `prompts` | Custom prompt overrides | `/api/projects/{id}/custom-prompts` |
-| `files` | Document & image upload, list, prune | `/api/projects/{id}/files` |
-| `chunks` | Chunking with text/document/separator/code strategies | `/api/projects/{id}/split` |
-| `tags` | Manually edit the LLM-built domain tree | `/api/projects/{id}/tags` |
-| `ga` | Genre-Audience pair management | `/api/projects/{id}/ga-pairs` |
-| `questions` | Question generation, manual CRUD, templates | `/api/projects/{id}/generate-questions` |
-| `datasets` | Answer + CoT generation, multi-dim eval, import/optimize | `/api/projects/{id}/datasets` |
-| `task` | Background task system (`task wait` for async jobs) | `/api/projects/{id}/tasks` |
-| `distill` | Zero-shot distillation from a topic tree | `/api/projects/{id}/distill` |
-| `eval` | Benchmark management | `/api/projects/{id}/eval-datasets` |
-| `eval-task` | Automated multi-model evaluation | `/api/projects/{id}/eval-tasks` |
-| `blind` | Blind A/B model testing | `/api/projects/{id}/blind-test` |
-| `export` | Alpaca / ShareGPT / multilingual-thinking export | `/api/projects/{id}/datasets/export` |
-| `repl` | Interactive shell (default when no subcommand is given) | — |
+[![Star History Chart](https://api.star-history.com/svg?repos=Terry-cyx/easy-dataset-cli&type=Date)](https://www.star-history.com/#Terry-cyx/easy-dataset-cli&Date)
 
-Run `easyds <group> --help` or `easyds <group> <subcommand> -h` for full options.
-
-Environment: **`EDS_BASE_URL`**, **`EDS_PROJECT_ID`** for the client; session state lives at `~/.easyds/session.json`.
-
----
-
-## 📦 Output formats
-
-| Format | Shape | Best for |
-|---|---|---|
-| `alpaca` | `{instruction, input, output, system}` | LoRA SFT, single-turn |
-| `sharegpt` | `{conversations: [{from, value}, …]}` | OpenAI-compatible, multi-turn |
-| `multilingual-thinking` | Alpaca + explicit `cot` field | Reasoning model distillation |
-
-`--include-cot` embeds chain-of-thought into `output` for the alpaca/sharegpt formats.
-`--score-gte 4` filters to records the evaluator scored ≥ 4 (out of 5).
-`--split 0.7,0.15,0.15` writes deterministic train/valid/test files.
-
----
-
-## 🆚 Why not just call the API directly?
-
-| Hand-rolled `curl` / `httpx` | easyds |
-|---|---|
-| Re-thread `projectId` through every request | `easyds project use` once, then forget it |
-| Discover server quirks one production-run at a time | 13 known quirks already worked around (see [`docs/SERVER_QUIRKS.md`](docs/SERVER_QUIRKS.md)) |
-| Re-invent the `model use` ↔ `defaultModelConfigId` dance | `easyds model use` writes both local session + server in one call |
-| Parse non-uniform JSON responses by hand | `--json` mode emits a stable, documented shape per command |
-| No agent guidance — LLM has to read the source | Ships an agent skill index with 9 scenario workflows |
-| Long-running task = "did it work?" guesswork | `easyds task wait` polls until completion, with timeout |
-| `ReadTimeout` looks like a fatal error | Documented as "re-list the resource, do not retry the command" |
-
----
-
-## 🤖 For AI agents
-
-The package ships an agent skill index at [`easyds/skills/SKILL.md`](easyds/skills/SKILL.md) and 16 reference docs under [`easyds/skills/reference/`](easyds/skills/reference/). The most important entries:
-
-- [`reference/03-canonical-pipeline.md`](easyds/skills/reference/03-canonical-pipeline.md) — the default 7-step recipe
-- [`reference/04-custom-prompts.md`](easyds/skills/reference/04-custom-prompts.md) — **must-read** before writing a custom prompt (output format constraints)
-- [`reference/06-operating-rules.md`](easyds/skills/reference/06-operating-rules.md) — 10 actionable rules learned from production runs
-- [`reference/07-agent-protocol.md`](easyds/skills/reference/07-agent-protocol.md) — `--json` mode + exit codes + retry policy + polling pattern
-- [`reference/workflows/`](easyds/skills/reference/workflows/) — 9 scenario recipes (custom-prompt pipeline, image VQA, multi-turn distillation, quality control, GA pairs, eval & blind test, …)
-
----
-
-## 🛠 Development
-
-```bash
-git clone https://github.com/Terry-cyx/easy-dataset-cli
-cd easy-dataset-cli
-
-# uv-managed: creates .venv, locks deps, installs in editable mode
-uv sync --extra test
-uv run easyds --version
-uv run pytest                       # → 246 passed, 1 skipped
-
-# or, plain pip:
-pip install -e ".[test]"
-easyds --version
-pytest
-```
-
-Opt-in live integration test (requires a running server + valid LLM API keys):
-
-```bash
-EDS_LIVE_TESTS=1 uv run pytest tests/test_full_e2e.py::TestLiveBackend
-```
-
----
-
-## 📂 Project layout
-
-```
-easy-dataset-cli/
-├── easyds/              Python package (PyPI dist: easy-dataset-cli)
-│   ├── cli.py             Click app, all 17 groups, ~80 subcommands
-│   ├── core/              one module per Easy-Dataset domain
-│   │   ├── project.py     /api/projects + defaultModelConfigId
-│   │   ├── model.py       per-project model config
-│   │   ├── files.py       multipart upload, prune, list-images
-│   │   ├── chunks.py      split + edit + batch-edit + clean
-│   │   ├── ga.py          genre × audience pair management
-│   │   ├── questions.py   generate, templates, manual CRUD
-│   │   ├── datasets.py    answers + cot + multi-dim eval
-│   │   ├── export.py      alpaca / sharegpt / multilingual-thinking
-│   │   └── …              13 more modules
-│   ├── utils/
-│   │   ├── backend.py     thin requests-based HTTP client
-│   │   └── repl_skin.py   prompt-toolkit REPL chrome
-│   └── skills/
-│       ├── SKILL.md         slim agent skill index
-│       └── reference/       16 reference docs + 9 workflow recipes
-├── tests/
-│   ├── test_core.py       234 unit tests (mocked HTTP)
-│   └── test_full_e2e.py   13 E2E tests (stub server + subprocess)
-├── docs/
-│   └── SERVER_QUIRKS.md   13 known Easy-Dataset bugs the CLI works around
-├── assets/                logo · banner · architecture (SVG)
-├── pyproject.toml         PEP 621 + uv, entry: easyds = easyds.cli:main
-├── uv.lock                committed for reproducibility
-└── LICENSE                AGPL-3.0-or-later
-```
-
----
-
-## 🔗 Related projects
-
-- **[Easy-Dataset](https://github.com/ConardLi/easy-dataset)** — the upstream Next.js + Prisma server `easyds` drives. Required dependency.
-
----
-
-## 📄 License
-
-AGPL-3.0-or-later — see [LICENSE](LICENSE). Same license as upstream Easy-Dataset.
+<div align="center">
+  <sub>A CLI harness for <a href="https://github.com/ConardLi/easy-dataset">Easy-Dataset</a> — built for humans and agents alike.</sub>
+</div>

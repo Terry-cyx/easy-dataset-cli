@@ -248,7 +248,7 @@ tests/
     double-encoded-labels.json
     multi-turn-malformed.json
 
-easyds/skills/reference/
+plugins/easyds/skills/easyds/reference/
   11-dataset-eval.md       # how agents invoke + interpret eval
 ```
 

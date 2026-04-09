@@ -15,7 +15,7 @@
 
 [简体中文](./README.zh-CN.md) | [English](./README.md) | **Türkçe**
 
-[Özellikler](#özellikler) • [Hızlı Başlangıç](#yerel-çalıştırma) • [Belgeler](easyds/skills/SKILL.md) • [Katkı](#katkı) • [Lisans](#lisans)
+[Özellikler](#özellikler) • [Kurulum](#kurulum) • [Belgeler](plugins/easyds/skills/easyds/SKILL.md) • [Katkı](#katkı) • [Lisans](#lisans)
 
 Bu projeyi beğendiyseniz, lütfen bir Star ⭐️ vermeyi unutmayın!
 
@@ -38,7 +38,8 @@ Bu projeyi beğendiyseniz, lütfen bir Star ⭐️ vermeyi unutmayın!
 ### 🤖 AI Agent'ları için Tasarlandı
 
 - **Her komutta `--json`** ve kararlı bir çıkış kodu protokolü (`0` ok, `2` sunucu hatası, `3` doğrulama, `4` bulunamadı, …) — agent'lar metin ayrıştırmadan hatalara tepki verebilir
-- **Gömülü agent skill dizini** — [`easyds/skills/SKILL.md`](easyds/skills/SKILL.md) artı 16 referans belgesi ve 11 senaryo akışı. Bir LLM önceden bağlam olmadan operasyon kurallarını kavrar
+- **Claude Code için tek komutla kurulum** — Claude Code eklentisi olarak dağıtılır, `/easyds-setup` slash komutuyla birlikte gelir; SKILL.md'ye elle yol göstermek gerekmez
+- **Gömülü agent skill dizini** — [`plugins/easyds/skills/easyds/SKILL.md`](plugins/easyds/skills/easyds/SKILL.md) artı 16 referans belgesi ve 11 senaryo akışı. Bir LLM önceden bağlam olmadan operasyon kurallarını kavrar
 - **Gerçek üretim koşularından damıtılmış operasyon kuralları** — `her zaman --ga`, `model use` sunucuya yazar, istemci `ReadTimeout` ≠ hata, özel prompt'lar katı JSON üretmelidir
 - **Kararlı session durumu** — `~/.easyds/session.json` altında. Agent'lar her çağrıda `--project`'i tekrar iletmek zorunda değildir
 
@@ -84,24 +85,38 @@ Bu arada, iki gerçek uçtan uca koşu yeniden üretilebilir tarifler olarak pak
 - **Kimi-K2.5 + Çince spec belgesi** — tam Alpaca dışa aktarımı, 200+ soru-cevap çifti
 - **Kimi-K2.5 + ANSYS CFX öğreticileri** — özel prompt boru hattı, İngilizce soru-cevap, ShareGPT dışa aktarımı
 
-CFX koşusundan damıtılmış üretim kalitesinde tarif için [`easyds/skills/reference/workflows/custom-prompt-pipeline.md`](easyds/skills/reference/workflows/custom-prompt-pipeline.md) dosyasına bakın.
+CFX koşusundan damıtılmış üretim kalitesinde tarif için [`plugins/easyds/skills/easyds/reference/workflows/custom-prompt-pipeline.md`](plugins/easyds/skills/easyds/reference/workflows/custom-prompt-pipeline.md) dosyasına bakın.
 
-## Yerel Çalıştırma
+## Kurulum
 
-### Ön koşul: bir Easy-Dataset sunucusu başlatın
+`easyds`'i nasıl süreceğinize göre bir yol seçin.
 
-`easyds` ince bir HTTP istemcisidir — chunk'lama, alan ağacı üretimi veya LLM çağrılarını yeniden uygulamaz. Her şeyi gerçek bir Easy-Dataset sunucusuna iletir ve bu sunucunun herhangi bir komut çalışmadan önce erişilebilir olması gerekir.
+### 🥇 Claude Code kullanıcıları — tek tıkla eklenti
 
-```bash
-git clone https://github.com/ConardLi/easy-dataset
-cd easy-dataset
-pnpm install        # yalnızca ilk kez
-pnpm dev            # http://localhost:1717 üzerinde sunar
+Claude Code içinde iki slash komutu çalıştırın:
+
+```text
+/plugin marketplace add Terry-cyx/easy-dataset-cli
+/plugin install easyds@easy-dataset-cli
 ```
 
-> Easy-Dataset'in **yerleşik kimlik doğrulaması yoktur** — onu localhost'ta veya kendi kimlik doğrulama proxy'nizin arkasında çalıştırın.
+Bu işlem **agent skill**'i (SKILL.md + 16 referans belgesi + 11 senaryo akışı — Claude otomatik yükler) ve bir **`/easyds-setup`** slash komutunu birlikte kurar. Ardından yine Claude Code içinde çalıştırın:
 
-### easyds'i kurun
+```text
+/easyds-setup
+```
+
+`/easyds-setup`, `easyds` CLI'ını `uv` ile (başarısız olursa `pip`'e geri dönerek) kurar, çalışan bir Easy-Dataset sunucusu olup olmadığını yoklar ve çalışmıyorsa üç seçeneğin hangisini tercih ettiğinizi sorar (Docker tek satır / masaüstü istemci / kaynaktan). Hepsi bu — elle `pip install` yok, elle SKILL.md yolu yazmak yok.
+
+### 🥈 Diğer herkes — bağımsız CLI
+
+Sıfır kurulum çağrısı (hiçbir şey kurmadan):
+
+```bash
+uvx easy-dataset-cli --help
+```
+
+Veya bir kez kurun ve `PATH`'te kalsın:
 
 ```bash
 # uv ile (tavsiye — en hızlı, izole tool kurulumu):
@@ -116,7 +131,28 @@ pip install easy-dataset-cli
 
 **Python 3.10+** gerekir. PyPI dağıtımı `easy-dataset-cli`, kurulan ikili ise **`easyds`**.
 
-### Standart 7 adımlık boru hattını çalıştırın
+### Easy-Dataset sunucusu (her iki yol için de zorunlu ön koşul)
+
+`easyds` ince bir HTTP istemcisidir — chunk'lama, alan ağacı üretimi veya LLM çağrılarını yeniden uygulamaz. Her şeyi gerçek bir Easy-Dataset sunucusuna iletir ve bu sunucunun herhangi bir komut çalışmadan önce erişilebilir olması gerekir. Birini seçin:
+
+```bash
+# Seçenek 1 — Docker (en hızlı):
+docker run -d --name easy-dataset -p 1717:1717 \
+    -v "$PWD/local-db:/app/local-db" \
+    -v "$PWD/prisma:/app/prisma" \
+    ghcr.io/conardli/easy-dataset
+
+# Seçenek 2 — Windows / macOS / Linux masaüstü istemci:
+#   https://github.com/ConardLi/easy-dataset/releases/latest
+
+# Seçenek 3 — kaynaktan (geliştiriciler için):
+git clone https://github.com/ConardLi/easy-dataset
+cd easy-dataset && pnpm install && pnpm dev   # http://localhost:1717 üzerinde sunar
+```
+
+> Easy-Dataset'in **yerleşik kimlik doğrulaması yoktur** — onu localhost'ta veya kendi kimlik doğrulama proxy'nizin arkasında çalıştırın.
+
+## Hızlı Başlangıç — standart 7 adımlık boru hattı
 
 ```bash
 # 0. Sunucunun erişilebilir olduğunu doğrulayın.
@@ -160,9 +196,9 @@ Tüm döngü bu kadar: **status → project → model → upload → chunk → q
 
 ## Belgeler
 
-- **[`easyds/skills/SKILL.md`](easyds/skills/SKILL.md)** — ince agent skill dizini; LLM'ler tarafından otomatik okunur
-- **[`easyds/skills/reference/`](easyds/skills/reference/)** — standart boru hattı, özel prompt kuralları, operasyon kuralları, agent protokolü, görev ayarları, PDF/veri temizleme, soru şablonları ve dataset-eval geri bildirim döngüsü dahil 16 referans belgesi
-- **[`easyds/skills/reference/workflows/`](easyds/skills/reference/workflows/)** — 11 senaryo tarifi (özel prompt boru hattı, duygu sınıflandırma, belge temizleme, görsel VQA, çok turlu damıtma, GA/MGA çiftleri, değerlendirme & kör test, alan ağacı düzenleme, içe aktarma/temizleme/optimize, arka plan görevleri, kalite kontrol)
+- **[`plugins/easyds/skills/easyds/SKILL.md`](plugins/easyds/skills/easyds/SKILL.md)** — ince agent skill dizini; Claude Code eklenti kullanıcılarına otomatik yüklenir, diğerleri için elle okunur
+- **[`plugins/easyds/skills/easyds/reference/`](plugins/easyds/skills/easyds/reference/)** — standart boru hattı, özel prompt kuralları, operasyon kuralları, agent protokolü, görev ayarları, PDF/veri temizleme, soru şablonları ve dataset-eval geri bildirim döngüsü dahil 16 referans belgesi
+- **[`plugins/easyds/skills/easyds/reference/workflows/`](plugins/easyds/skills/easyds/reference/workflows/)** — 11 senaryo tarifi (özel prompt boru hattı, duygu sınıflandırma, belge temizleme, görsel VQA, çok turlu damıtma, GA/MGA çiftleri, değerlendirme & kör test, alan ağacı düzenleme, içe aktarma/temizleme/optimize, arka plan görevleri, kalite kontrol)
 - **[`docs/SERVER_QUIRKS.md`](docs/SERVER_QUIRKS.md)** — CLI'ın çözdüğü 13 bilinen Easy-Dataset sunucu tuhaflığı
 - **Upstream Easy-Dataset belgeleri**: [https://docs.easy-dataset.com/](https://docs.easy-dataset.com/)
 
@@ -173,7 +209,7 @@ Tüm döngü bu kadar: **status → project → model → upload → chunk → q
 - **Belge temizleme yeniden çekimi** — uzun gürültülü PDF → toplu temizleme → skorlu soru-cevap → skor filtreli dışa aktarım
 - **Slayt dizininden görsel VQA veri seti** — görsel model tabanlı cevap üretimi
 
-Yukarıdakilerin tümü [`easyds/skills/reference/workflows/`](easyds/skills/reference/workflows/) altında çalıştırılabilir senaryo tarifleri olarak kodlanmıştır.
+Yukarıdakilerin tümü [`plugins/easyds/skills/easyds/reference/workflows/`](plugins/easyds/skills/easyds/reference/workflows/) altında çalıştırılabilir senaryo tarifleri olarak kodlanmıştır.
 
 ## Katkı
 

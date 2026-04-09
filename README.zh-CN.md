@@ -15,7 +15,7 @@
 
 **简体中文** | [English](./README.md) | [Türkçe](./README.tr.md)
 
-[特性](#特性) • [快速开始](#本地运行) • [文档](easyds/skills/SKILL.md) • [贡献](#贡献) • [协议](#协议)
+[特性](#特性) • [安装](#安装) • [文档](plugins/easyds/skills/easyds/SKILL.md) • [贡献](#贡献) • [协议](#协议)
 
 如果你喜欢这个项目，请点一个 Star ⭐️！
 
@@ -38,7 +38,8 @@
 ### 🤖 为 AI Agent 而生
 
 - **每条命令都支持 `--json`**，配合稳定的退出码协议（`0` OK、`2` 服务端错误、`3` 校验错误、`4` 找不到…），Agent 不用解析人话就能对失败做出反应
-- **内嵌 Agent skill 索引**：[`easyds/skills/SKILL.md`](easyds/skills/SKILL.md) 加上 16 份参考文档和 11 个场景工作流 —— LLM 零上下文就能吃进操作规则
+- **Claude Code 一键安装** —— 作为 Claude Code 插件分发，自带 `/easyds-setup` 斜杠命令，不用手动指路 SKILL.md
+- **内嵌 Agent skill 索引**：[`plugins/easyds/skills/easyds/SKILL.md`](plugins/easyds/skills/easyds/SKILL.md) 加上 16 份参考文档和 11 个场景工作流 —— LLM 零上下文就能吃进操作规则
 - **从真实生产运行中提炼的操作规则** —— `永远 --ga`、`model use 写服务端`、客户端 `ReadTimeout` ≠ 失败、自定义 Prompt 必须产出严格 JSON
 - **稳定的 session 状态** 保存在 `~/.easyds/session.json`，Agent 无需每次都重复传 `--project`
 
@@ -84,24 +85,38 @@
 - **Kimi-K2.5 + 中文规范文档** —— 完整 Alpaca 导出，200+ 问答对
 - **Kimi-K2.5 + ANSYS CFX 教程** —— 自定义 Prompt 流水线，英文问答，ShareGPT 导出
 
-生产级配方见 [`easyds/skills/reference/workflows/custom-prompt-pipeline.md`](easyds/skills/reference/workflows/custom-prompt-pipeline.md)。
+生产级配方见 [`plugins/easyds/skills/easyds/reference/workflows/custom-prompt-pipeline.md`](plugins/easyds/skills/easyds/reference/workflows/custom-prompt-pipeline.md)。
 
-## 本地运行
+## 安装
 
-### 前置条件：启动 Easy-Dataset 服务器
+按照你使用 `easyds` 的方式挑一条路径。
 
-`easyds` 是一个薄 HTTP 客户端 —— 它**不会**重新实现切分、领域树生成或 LLM 调用，而是把一切都转发给真正的 Easy-Dataset 服务器。在任何命令运行前，服务器必须是可达的。
+### 🥇 Claude Code 用户 —— 一键安装插件
 
-```bash
-git clone https://github.com/ConardLi/easy-dataset
-cd easy-dataset
-pnpm install        # 只需首次
-pnpm dev            # 监听 http://localhost:1717
+在 Claude Code 里跑两条斜杠命令：
+
+```text
+/plugin marketplace add Terry-cyx/easy-dataset-cli
+/plugin install easyds@easy-dataset-cli
 ```
 
-> Easy-Dataset **没有内建鉴权** —— 请跑在 localhost 或你自己的认证代理之后。
+这会把 **Agent skill**（SKILL.md + 16 份参考文档 + 11 个场景工作流 —— Claude 会自动加载）和一条 **`/easyds-setup`** 斜杠命令一起装好。然后，继续在 Claude Code 里执行：
 
-### 安装 easyds
+```text
+/easyds-setup
+```
+
+`/easyds-setup` 会用 `uv`（失败则回退到 `pip`）帮你装好 `easyds` CLI，探测 Easy-Dataset 服务器是否在跑，若未启动则询问你偏好哪种启动方式（Docker 一行命令 / 桌面客户端 / 源码）。就这么多 —— 不用手动 `pip install`，也不用手写 SKILL.md 的路径。
+
+### 🥈 其他人 —— 独立 CLI
+
+零安装调用（完全不用装）：
+
+```bash
+uvx easy-dataset-cli --help
+```
+
+或者一次装好留在 `PATH` 上：
 
 ```bash
 # 用 uv 安装（推荐 —— 最快，独立的 tool 环境）：
@@ -116,7 +131,28 @@ pip install easy-dataset-cli
 
 需要 **Python 3.10+**。PyPI 包名为 `easy-dataset-cli`，安装后的二进制命令是 **`easyds`**。
 
-### 跑一遍标准的 7 步流水线
+### Easy-Dataset 服务器（两条路径共同的硬前置）
+
+`easyds` 是一个薄 HTTP 客户端 —— 它**不会**重新实现切分、领域树生成或 LLM 调用，而是把一切都转发给真正的 Easy-Dataset 服务器。任何命令运行前服务器都必须可达。任选一种：
+
+```bash
+# 选项 1 —— Docker（最快）：
+docker run -d --name easy-dataset -p 1717:1717 \
+    -v "$PWD/local-db:/app/local-db" \
+    -v "$PWD/prisma:/app/prisma" \
+    ghcr.io/conardli/easy-dataset
+
+# 选项 2 —— Windows / macOS / Linux 桌面客户端：
+#   https://github.com/ConardLi/easy-dataset/releases/latest
+
+# 选项 3 —— 从源码启动（开发者向）：
+git clone https://github.com/ConardLi/easy-dataset
+cd easy-dataset && pnpm install && pnpm dev   # 监听 http://localhost:1717
+```
+
+> Easy-Dataset **没有内建鉴权** —— 请跑在 localhost 或你自己的认证代理之后。
+
+## 快速开始 —— 标准 7 步流水线
 
 ```bash
 # 0. 确认服务器可达。
@@ -160,9 +196,9 @@ easyds --json datasets eval ./alpaca.json
 
 ## 文档
 
-- **[`easyds/skills/SKILL.md`](easyds/skills/SKILL.md)** —— 精简的 Agent skill 索引，LLM 会自动读取
-- **[`easyds/skills/reference/`](easyds/skills/reference/)** —— 16 份参考文档，涵盖标准流水线、自定义 Prompt 规则、操作规则、Agent 协议、任务设置、PDF/数据清洗、问题模板以及 dataset-eval 反馈闭环
-- **[`easyds/skills/reference/workflows/`](easyds/skills/reference/workflows/)** —— 11 个场景配方（自定义 Prompt 流水线、情感分类、文档清洗、图像 VQA、多轮蒸馏、GA/MGA 对、评估 & 盲测、领域树编辑、导入/清洗/优化、后台任务、质量控制）
+- **[`plugins/easyds/skills/easyds/SKILL.md`](plugins/easyds/skills/easyds/SKILL.md)** —— 精简的 Agent skill 索引，Claude Code 插件用户自动加载，其他用户手动阅读
+- **[`plugins/easyds/skills/easyds/reference/`](plugins/easyds/skills/easyds/reference/)** —— 16 份参考文档，涵盖标准流水线、自定义 Prompt 规则、操作规则、Agent 协议、任务设置、PDF/数据清洗、问题模板以及 dataset-eval 反馈闭环
+- **[`plugins/easyds/skills/easyds/reference/workflows/`](plugins/easyds/skills/easyds/reference/workflows/)** —— 11 个场景配方（自定义 Prompt 流水线、情感分类、文档清洗、图像 VQA、多轮蒸馏、GA/MGA 对、评估 & 盲测、领域树编辑、导入/清洗/优化、后台任务、质量控制）
 - **[`docs/SERVER_QUIRKS.md`](docs/SERVER_QUIRKS.md)** —— CLI 已绕过的 13 个 Easy-Dataset 服务端怪癖
 - **上游 Easy-Dataset 文档**：[https://docs.easy-dataset.com/](https://docs.easy-dataset.com/)
 
@@ -173,7 +209,7 @@ easyds --json datasets eval ./alpaca.json
 - **文档清洗重做** —— 长篇噪声 PDF → 批量清洗 → 带评分的问答 → 按分数过滤导出
 - **从一堆幻灯片目录生成图像 VQA 数据集** —— 视觉模型答案生成
 
-以上所有案例都被编码成了可运行的场景配方，位于 [`easyds/skills/reference/workflows/`](easyds/skills/reference/workflows/) 下。
+以上所有案例都被编码成了可运行的场景配方，位于 [`plugins/easyds/skills/easyds/reference/workflows/`](plugins/easyds/skills/easyds/reference/workflows/) 下。
 
 ## 贡献
 

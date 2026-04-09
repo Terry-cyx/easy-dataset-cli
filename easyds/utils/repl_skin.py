@@ -101,22 +101,24 @@ class ReplSkin:
             version: CLI version string.
             history_file: Path for persistent command history.
                          Defaults to ~/.easyds/history
-            skill_path: Path to the SKILL.md file for agent discovery.
-                        Auto-detected from the package's skills/ directory if not provided.
+            skill_path: Path or URL to the SKILL.md for agent discovery.
+                        Defaults to the GitHub URL of the agent skill (which lives
+                        in the Claude Code plugin at plugins/easyds/skills/easyds/).
                         Displayed in banner for AI agents to know where to read skill info.
         """
         self.software = software.lower().replace("-", "_")
         self.display_name = software.replace("_", " ").title()
         self.version = version
 
-        # Auto-detect skill path from package layout:
-        #   easyds/utils/repl_skin.py  (this file)
-        #   easyds/skills/SKILL.md     (target)
+        # The agent skill is canonically distributed as part of the Claude Code
+        # plugin at plugins/easyds/skills/easyds/SKILL.md. Standalone CLI users
+        # can read it on GitHub; Claude Code users get it auto-loaded by the
+        # plugin. Default the banner hint to the GitHub URL.
         if skill_path is None:
-            from pathlib import Path
-            _auto = Path(__file__).resolve().parent.parent / "skills" / "SKILL.md"
-            if _auto.is_file():
-                skill_path = str(_auto)
+            skill_path = (
+                "https://github.com/Terry-cyx/easy-dataset-cli/"
+                "blob/main/plugins/easyds/skills/easyds/SKILL.md"
+            )
         self.skill_path = skill_path
         self.accent = _ACCENT_COLORS.get(self.software, _DEFAULT_ACCENT)
 

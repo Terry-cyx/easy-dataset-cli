@@ -15,7 +15,7 @@
 
 [简体中文](./README.zh-CN.md) | **English** | [Türkçe](./README.tr.md)
 
-[Features](#features) • [Quick Start](#local-run) • [Documentation](easyds/skills/SKILL.md) • [Contributing](#contributing) • [License](#license)
+[Features](#features) • [Install](#install) • [Documentation](plugins/easyds/skills/easyds/SKILL.md) • [Contributing](#contributing) • [License](#license)
 
 If you like this project, please give it a Star ⭐️!
 
@@ -38,7 +38,8 @@ If you like this project, please give it a Star ⭐️!
 ### 🤖 Built for AI Agents
 
 - **`--json` on every command** with a stable exit-code protocol (`0` ok, `2` server error, `3` validation, `4` not found, …) so agents can react to failures without parsing prose
-- **Embedded agent skill index** at [`easyds/skills/SKILL.md`](easyds/skills/SKILL.md) plus 16 reference docs and 11 scenario workflows — an LLM picks up the operating rules with zero prior context
+- **One-command install for Claude Code** — ship as a Claude Code plugin with a `/easyds-setup` slash command; no manual skill-path wiring
+- **Embedded agent skill index** at [`plugins/easyds/skills/easyds/SKILL.md`](plugins/easyds/skills/easyds/SKILL.md) plus 16 reference docs and 11 scenario workflows — an LLM picks up the operating rules with zero prior context
 - **Operating rules distilled from real production runs** — `always --ga`, `model use` writes server, client `ReadTimeout` ≠ failure, custom prompts must produce strict JSON
 - **Stable session state** under `~/.easyds/session.json` so agents don't need to re-thread `--project` through every call
 
@@ -84,24 +85,38 @@ In the meantime, two real end-to-end runs are shipped as reproducible recipes:
 - **Kimi-K2.5 + Chinese spec doc** — full Alpaca export, 200+ Q&A pairs
 - **Kimi-K2.5 + ANSYS CFX tutorials** — custom prompt pipeline, English Q&A, ShareGPT export
 
-See [`easyds/skills/reference/workflows/custom-prompt-pipeline.md`](easyds/skills/reference/workflows/custom-prompt-pipeline.md) for the production-grade recipe distilled from the CFX run.
+See [`plugins/easyds/skills/easyds/reference/workflows/custom-prompt-pipeline.md`](plugins/easyds/skills/easyds/reference/workflows/custom-prompt-pipeline.md) for the production-grade recipe distilled from the CFX run.
 
-## Local Run
+## Install
 
-### Prerequisite: start an Easy-Dataset server
+Pick the path that matches how you'll drive `easyds`.
 
-`easyds` is a thin HTTP client — it does not reimplement chunking, domain-tree generation, or LLM calls. It forwards everything to a real Easy-Dataset server, which must be reachable before any command runs.
+### 🥇 Claude Code users — one-click plugin
 
-```bash
-git clone https://github.com/ConardLi/easy-dataset
-cd easy-dataset
-pnpm install        # first time only
-pnpm dev            # serves http://localhost:1717
+Inside Claude Code, run two slash commands:
+
+```text
+/plugin marketplace add Terry-cyx/easy-dataset-cli
+/plugin install easyds@easy-dataset-cli
 ```
 
-> Easy-Dataset has **no built-in authentication** — run it on localhost or behind your own auth proxy.
+This bundles the **agent skill** (`SKILL.md` + 16 reference docs + 11 scenario workflows — Claude will auto-load them) and a **`/easyds-setup`** slash command. Then, still inside Claude Code, run:
 
-### Install easyds
+```text
+/easyds-setup
+```
+
+`/easyds-setup` will install the `easyds` CLI via `uv` (falling back to `pip`), probe for a running Easy-Dataset server, and — if the server isn't up — ask you which of three options you prefer (Docker one-liner, desktop client, or source). That's it; no manual `pip install`, no hand-written path to `SKILL.md`.
+
+### 🥈 Everyone else — standalone CLI
+
+Zero-install invocation (no tool install needed):
+
+```bash
+uvx easy-dataset-cli --help
+```
+
+Or install once and keep it on your `PATH`:
 
 ```bash
 # With uv (recommended — fastest, isolated tool install):
@@ -116,7 +131,28 @@ pip install easy-dataset-cli
 
 Requires **Python 3.10+**. The PyPI distribution is `easy-dataset-cli`; the installed binary is **`easyds`**.
 
-### Run the canonical 7-step pipeline
+### Easy-Dataset server (hard prerequisite for both paths)
+
+`easyds` is a thin HTTP client — it does not reimplement chunking, domain-tree generation, or LLM calls. It forwards everything to a real Easy-Dataset server, which must be reachable before any command runs. Pick one:
+
+```bash
+# Option 1 — Docker (fastest):
+docker run -d --name easy-dataset -p 1717:1717 \
+    -v "$PWD/local-db:/app/local-db" \
+    -v "$PWD/prisma:/app/prisma" \
+    ghcr.io/conardli/easy-dataset
+
+# Option 2 — desktop client for Windows / macOS / Linux:
+#   https://github.com/ConardLi/easy-dataset/releases/latest
+
+# Option 3 — from source (developers):
+git clone https://github.com/ConardLi/easy-dataset
+cd easy-dataset && pnpm install && pnpm dev   # serves http://localhost:1717
+```
+
+> Easy-Dataset has **no built-in authentication** — run it on localhost or behind your own auth proxy.
+
+## Quick Start — the canonical 7-step pipeline
 
 ```bash
 # 0. Verify the server is reachable.
@@ -160,9 +196,9 @@ That's the full loop: **status → project → model → upload → chunk → qu
 
 ## Documentation
 
-- **[`easyds/skills/SKILL.md`](easyds/skills/SKILL.md)** — slim agent skill index, read by LLMs automatically
-- **[`easyds/skills/reference/`](easyds/skills/reference/)** — 16 reference docs including the canonical pipeline, custom-prompt rules, operating rules, agent protocol, task settings, PDF/data cleaning, question templates, and the dataset-eval feedback loop
-- **[`easyds/skills/reference/workflows/`](easyds/skills/reference/workflows/)** — 11 scenario recipes (custom-prompt pipeline, sentiment classification, document cleansing, image VQA, multi-turn distillation, GA/MGA pairs, eval & blind test, domain-tree editing, import/clean/optimize, background tasks, quality control)
+- **[`plugins/easyds/skills/easyds/SKILL.md`](plugins/easyds/skills/easyds/SKILL.md)** — slim agent skill index, auto-loaded by Claude Code plugin users and read manually by everyone else
+- **[`plugins/easyds/skills/easyds/reference/`](plugins/easyds/skills/easyds/reference/)** — 16 reference docs including the canonical pipeline, custom-prompt rules, operating rules, agent protocol, task settings, PDF/data cleaning, question templates, and the dataset-eval feedback loop
+- **[`plugins/easyds/skills/easyds/reference/workflows/`](plugins/easyds/skills/easyds/reference/workflows/)** — 11 scenario recipes (custom-prompt pipeline, sentiment classification, document cleansing, image VQA, multi-turn distillation, GA/MGA pairs, eval & blind test, domain-tree editing, import/clean/optimize, background tasks, quality control)
 - **[`docs/SERVER_QUIRKS.md`](docs/SERVER_QUIRKS.md)** — 13 known Easy-Dataset server quirks the CLI already works around
 - **Upstream Easy-Dataset documentation**: [https://docs.easy-dataset.com/](https://docs.easy-dataset.com/)
 
@@ -173,7 +209,7 @@ That's the full loop: **status → project → model → upload → chunk → qu
 - **Document cleansing retake** — long noisy PDF → batch cleansing → scored Q&A → score-filtered export
 - **Image VQA dataset from a directory of slides** — vision-model answer generation
 
-All of the above are encoded as runnable scenario recipes under [`easyds/skills/reference/workflows/`](easyds/skills/reference/workflows/).
+All of the above are encoded as runnable scenario recipes under [`plugins/easyds/skills/easyds/reference/workflows/`](plugins/easyds/skills/easyds/reference/workflows/).
 
 ## Contributing
 

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schemas/marketplace.json",
+  "name": "easy-dataset-cli",
+  "owner": {
+    "name": "Terry-cyx",
+    "url": "https://github.com/Terry-cyx"
+  },
+  "description": "Dataset generation, AI-native — drive Easy-Dataset from Claude Code.",
+  "plugins": [
+    {
+      "name": "easyds",
+      "source": "./plugins/easyds",
+      "description": "Drive the full Easy-Dataset fine-tuning pipeline from Claude Code: upload → chunk → generate questions → generate answers → export Alpaca/ShareGPT, plus the unique dataset-eval feedback loop. Bundles the agent skill and a /easyds-setup installer.",
+      "version": "1.0.1",
+      "category": "data",
+      "keywords": [
+        "dataset",
+        "fine-tuning",
+        "llm",
+        "easy-dataset",
+        "alpaca",
+        "sharegpt",
+        "sft",
+        "agent"
+      ]
+    }
+  ]
+}

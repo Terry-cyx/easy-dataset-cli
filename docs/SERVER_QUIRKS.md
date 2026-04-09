@@ -2,7 +2,7 @@
 
 A catalog of server-side bugs and protocol oddities discovered during real end-to-end production runs against the upstream [Easy-Dataset](https://github.com/ConardLi/easy-dataset) Next.js server. `easyds` works around all of them transparently — this document exists for **maintainers** who need to understand *why* the CLI does the things it does.
 
-> **For end users**: read [`easyds/skills/reference/06-operating-rules.md`](../easyds/skills/reference/06-operating-rules.md) instead. That doc translates these quirks into actionable rules without the historical detail.
+> **For end users**: read [`plugins/easyds/skills/easyds/reference/06-operating-rules.md`](../plugins/easyds/skills/easyds/reference/06-operating-rules.md) instead. That doc translates these quirks into actionable rules without the historical detail.
 
 | # | Symptom | Root cause | CLI workaround |
 |---|---|---|---|

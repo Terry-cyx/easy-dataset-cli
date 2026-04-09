@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schemas/plugin.json",
+  "name": "easyds",
+  "version": "1.0.1",
+  "description": "Drive Easy-Dataset from Claude Code — dataset generation, AI-native. Ships the easyds agent skill (16 reference docs + 11 scenario workflows) and a /easyds-setup slash command that installs the CLI via uv and checks that an Easy-Dataset server is running.",
+  "author": {
+    "name": "Terry-cyx",
+    "url": "https://github.com/Terry-cyx"
+  },
+  "homepage": "https://github.com/Terry-cyx/easy-dataset-cli",
+  "repository": "https://github.com/Terry-cyx/easy-dataset-cli",
+  "license": "AGPL-3.0-or-later",
+  "keywords": [
+    "easy-dataset",
+    "dataset-generation",
+    "fine-tuning",
+    "llm",
+    "alpaca",
+    "sharegpt",
+    "agent"
+  ]
+}

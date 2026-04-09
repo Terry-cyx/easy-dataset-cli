@@ -65,13 +65,10 @@ packages = [
     "easyds.core",
     "easyds.utils",
 ]
-
-[tool.setuptools.package-data]
-easyds = [
-    "skills/SKILL.md",
-    "skills/reference/*.md",
-    "skills/reference/workflows/*.md",
-]
+# Note: agent skill docs live at plugins/easyds/skills/easyds/ (single source
+# of truth, consumed by both the Claude Code plugin and the standalone CLI).
+# They are intentionally NOT shipped inside the wheel — read them on GitHub,
+# or install the Claude Code plugin which bundles them automatically.
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

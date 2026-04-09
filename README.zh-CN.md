@@ -31,7 +31,7 @@
 
 ## 动态
 
-🎉🎉 **easy-dataset-cli v1.0.1 —— dataset-eval 反馈闭环上线！** 除了包装 Easy-Dataset 的每一项能力，`easyds` 现在还带有一项 GUI 无法提供的独占闭环特性：`datasets eval` 会对任何最终的 Alpaca/ShareGPT 文件跑一组确定性 Schema 检查，把每条失败归因到负责修复的那一步流水线，通过 `--fix {chunk-join,unwrap-labels,render-placeholders}` 在本地做安全修复，并可选地用 LLM judge 针对**有据性 / 正确性 / 清晰度**三个维度打分 —— 全过程不需要再碰服务端一次。也就是说，LLM Agent 现在可以*自行评估自己产出的数据集、决定该重跑哪一步、并在本地修复记录*，全部在一个紧凑的闭环里完成。完整故事见 [`easyds/skills/reference/11-dataset-eval.md`](easyds/skills/reference/11-dataset-eval.md)。
+🎉🎉 **easy-dataset-cli v1.0.1 —— dataset-eval 反馈闭环上线！** 除了包装 Easy-Dataset 的每一项能力，`easyds` 现在还带有一项 GUI 无法提供的独占闭环特性：`datasets eval` 会对任何最终的 Alpaca/ShareGPT 文件跑一组确定性 Schema 检查，把每条失败归因到负责修复的那一步流水线，通过 `--fix {chunk-join,unwrap-labels,render-placeholders}` 在本地做安全修复，并可选地用 LLM judge 针对**有据性 / 正确性 / 清晰度**三个维度打分 —— 全过程不需要再碰服务端一次。也就是说，LLM Agent 现在可以*自行评估自己产出的数据集、决定该重跑哪一步、并在本地修复记录*，全部在一个紧凑的闭环里完成。完整故事见 [`plugins/easyds/skills/easyds/reference/11-dataset-eval.md`](plugins/easyds/skills/easyds/reference/11-dataset-eval.md)。
 
 ## 特性
 
@@ -110,26 +110,32 @@
 
 ### 🥈 其他人 —— 独立 CLI
 
-零安装调用（完全不用装）：
+> **⚠️ 包名注意事项。** `easy-dataset-cli` **目前尚未发布到 PyPI**；另外 PyPI 上存在一个无关的同名包 `easyds`（一个 pandas 工具库），它"能装成功"但不会给你 `easyds` 二进制。**请不要运行 `pip install easyds` 或 `pip install easy-dataset-cli`** —— 请从源码安装。
+
+零安装调用（不用装，直接从 GitHub 跑）：
 
 ```bash
-uvx easy-dataset-cli --help
+uvx --from git+https://github.com/Terry-cyx/easy-dataset-cli easyds --help
 ```
 
 或者一次装好留在 `PATH` 上：
 
 ```bash
-# 用 uv 安装（推荐 —— 最快，独立的 tool 环境）：
-uv tool install easy-dataset-cli
+# 推荐 —— 从 GitHub 做 uv tool 独立安装：
+uv tool install --upgrade git+https://github.com/Terry-cyx/easy-dataset-cli
 
 # 或用 uv 装到当前环境：
-uv pip install easy-dataset-cli
+uv pip install "git+https://github.com/Terry-cyx/easy-dataset-cli"
 
 # 或用普通 pip：
-pip install easy-dataset-cli
+pip install "git+https://github.com/Terry-cyx/easy-dataset-cli"
+
+# 或者 clone 下来做 editable 安装（开发者向）：
+git clone https://github.com/Terry-cyx/easy-dataset-cli
+cd easy-dataset-cli && pip install -e .
 ```
 
-需要 **Python 3.10+**。PyPI 包名为 `easy-dataset-cli`，安装后的二进制命令是 **`easyds`**。
+需要 **Python 3.10+**。安装完用 `easyds --version` 验证 —— 输出必须是 `1.0.1` 或更新。如果打印 `0.1.1`，你装到的是同名无关包，`uv tool uninstall easyds`（或 `pip uninstall easyds`）后再重试上面的命令。
 
 ### Easy-Dataset 服务器（两条路径共同的硬前置）
 

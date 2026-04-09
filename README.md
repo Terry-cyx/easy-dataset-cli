@@ -31,7 +31,7 @@ If you like this project, please give it a Star ⭐️!
 
 ## News
 
-🎉🎉 **easy-dataset-cli v1.0.1 — the dataset-eval feedback loop is here!** Beyond wrapping every Easy-Dataset capability, `easyds` now ships a unique closed-loop feature that the GUI cannot match: `datasets eval` runs deterministic schema checks on any final Alpaca/ShareGPT file, attributes failures to the pipeline step that owns the fix, applies safe local repairs via `--fix {chunk-join,unwrap-labels,render-placeholders}`, and optionally calls an LLM judge for groundedness/correctness/clarity scoring — all without touching the server. An LLM agent can now *evaluate its own dataset, decide which step to re-run, and repair rows locally* in a single tight loop. See [`easyds/skills/reference/11-dataset-eval.md`](easyds/skills/reference/11-dataset-eval.md) for the full story.
+🎉🎉 **easy-dataset-cli v1.0.1 — the dataset-eval feedback loop is here!** Beyond wrapping every Easy-Dataset capability, `easyds` now ships a unique closed-loop feature that the GUI cannot match: `datasets eval` runs deterministic schema checks on any final Alpaca/ShareGPT file, attributes failures to the pipeline step that owns the fix, applies safe local repairs via `--fix {chunk-join,unwrap-labels,render-placeholders}`, and optionally calls an LLM judge for groundedness/correctness/clarity scoring — all without touching the server. An LLM agent can now *evaluate its own dataset, decide which step to re-run, and repair rows locally* in a single tight loop. See [`plugins/easyds/skills/easyds/reference/11-dataset-eval.md`](plugins/easyds/skills/easyds/reference/11-dataset-eval.md) for the full story.
 
 ## Features
 
@@ -110,26 +110,32 @@ This bundles the **agent skill** (`SKILL.md` + 16 reference docs + 11 scenario w
 
 ### 🥈 Everyone else — standalone CLI
 
-Zero-install invocation (no tool install needed):
+> **⚠️ Heads-up on package names.** `easy-dataset-cli` is **not published on PyPI** (yet), and there is an unrelated PyPI package called `easyds` (a pandas helper) that will "install successfully" but ship no `easyds` binary. **Do not run `pip install easyds` or `pip install easy-dataset-cli`** — install from source instead.
+
+Zero-install invocation (no tool install needed, runs directly from GitHub):
 
 ```bash
-uvx easy-dataset-cli --help
+uvx --from git+https://github.com/Terry-cyx/easy-dataset-cli easyds --help
 ```
 
 Or install once and keep it on your `PATH`:
 
 ```bash
-# With uv (recommended — fastest, isolated tool install):
-uv tool install easy-dataset-cli
+# Preferred — isolated uv tool install from GitHub:
+uv tool install --upgrade git+https://github.com/Terry-cyx/easy-dataset-cli
 
 # Or into the current environment with uv:
-uv pip install easy-dataset-cli
+uv pip install "git+https://github.com/Terry-cyx/easy-dataset-cli"
 
 # Or with plain pip:
-pip install easy-dataset-cli
+pip install "git+https://github.com/Terry-cyx/easy-dataset-cli"
+
+# Or, for editable dev from a local clone:
+git clone https://github.com/Terry-cyx/easy-dataset-cli
+cd easy-dataset-cli && pip install -e .
 ```
 
-Requires **Python 3.10+**. The PyPI distribution is `easy-dataset-cli`; the installed binary is **`easyds`**.
+Requires **Python 3.10+**. After install, verify with `easyds --version` — the output must report `1.0.1` or newer. If it prints `0.1.1`, you installed the unrelated namesquat package — `uv tool uninstall easyds` (or `pip uninstall easyds`) and retry the command above.
 
 ### Easy-Dataset server (hard prerequisite for both paths)
 

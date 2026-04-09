@@ -17,15 +17,24 @@ There is **no auth**. Keep it on localhost or behind your own proxy.
 
 ## Step 2 — Install `easyds`
 
-PyPI package: `easyds`. Installed binary: **`easyds`**.
+`easy-dataset-cli` is **not on PyPI**. Install from source (GitHub or a local clone).
 
 ```bash
-pip install easyds
-# or, for editable dev install from this repo:
+# Preferred — isolated tool install from GitHub:
+uv tool install --upgrade git+https://github.com/Terry-cyx/easy-dataset-cli
+
+# Or, if you already cloned the repo (or use the Claude Code plugin marketplace copy):
+uv tool install --upgrade /path/to/easy-dataset-cli
+# Windows Git Bash example for the marketplace clone:
+# uv tool install --upgrade /c/Users/$USERNAME/.claude/plugins/marketplaces/easy-dataset-cli
+
+# Editable dev install from a local clone:
 pip install -e .
 ```
 
-Requires Python 3.10+.
+Installed binary: **`easyds`**. Requires Python 3.10+. Verify with `easyds --version` and confirm the output reports `1.0.1` (or later).
+
+> ⚠️ **Do not run `pip install easyds`.** There is an unrelated PyPI package named `easyds` (a pandas helper, version 0.1.x) that will "install successfully" but ship no `easyds` binary. If you accidentally installed it, uninstall with `uv tool uninstall easyds` (or `pip uninstall easyds`) before installing the real package. Likewise, `pip install easy-dataset-cli` will simply fail because that distribution name is not published on PyPI.
 
 ## Step 3 — Verify
 
